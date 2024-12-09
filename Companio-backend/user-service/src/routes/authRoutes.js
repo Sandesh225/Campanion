@@ -1,12 +1,12 @@
 // src/routes/authRoutes.js
+
 import express from "express";
 import {
   register,
   login,
   refreshToken,
   logout,
-  requestPasswordReset,
-  resetPassword,
+  getMe,
 } from "../controllers/authController.js";
 import validateRequest from "../middlewares/validateRequest.js";
 import {
@@ -14,10 +14,9 @@ import {
   loginSchema,
   refreshTokenSchema,
   logoutSchema,
-  requestPasswordResetSchema,
-  resetPasswordSchema,
 } from "../validations/authValidation.js";
 import { loginLimiter } from "../middlewares/rateLimiter.js";
+import authMiddleware from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
@@ -34,19 +33,12 @@ router.post(
   refreshToken
 );
 
+// Get current user
+router.get("/me", authMiddleware, getMe);
+
 // Logout Route
 router.post("/logout", validateRequest(logoutSchema), logout);
 
 // Password Reset Routes
-router.post(
-  "/request-password-reset",
-  validateRequest(requestPasswordResetSchema),
-  requestPasswordReset
-);
-router.post(
-  "/reset-password",
-  validateRequest(resetPasswordSchema),
-  resetPassword
-);
 
 export default router;

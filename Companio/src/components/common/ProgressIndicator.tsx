@@ -1,8 +1,6 @@
-// frontend/src/components/Common/ProgressIndicator.tsx
-
-import React from 'react';
-import {ProgressBar, Text} from 'react-native-paper';
-import {View, StyleSheet} from 'react-native';
+import React from "react";
+import { View, StyleSheet } from "react-native";
+import { ProgressBar, Text } from "react-native-paper";
 
 interface ProgressIndicatorProps {
   currentStep: number;
@@ -17,31 +15,27 @@ const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
 
   return (
     <View style={styles.container}>
-      <ProgressBar
-        progress={progress}
-        color="#6200ee"
-        style={styles.progressBar}
-      />
       <Text style={styles.text}>
         Step {currentStep} of {totalSteps}
       </Text>
+      <ProgressBar progress={progress} color="#6200ee" style={styles.bar} />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 10,
-    alignItems: 'center',
-  },
-  progressBar: {
-    width: '80%',
-    height: 8,
-    borderRadius: 4,
+    marginBottom: 20,
   },
   text: {
-    marginTop: 5,
-    color: '#333',
+    textAlign: "center",
+    marginBottom: 5,
+    color: "#6200ee",
+    fontWeight: "bold",
+  },
+  bar: {
+    height: 10,
+    borderRadius: 5,
   },
 });
 

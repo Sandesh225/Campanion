@@ -20,6 +20,6 @@
     },
     "types": ["jest"]
   },
-  "include": ["src", "index.ts", "index.tsx", "App.tsx"],
+  "include": ["src", "index.ts", "index.tsx", "App.tsx", "src/types"],
   "exclude": ["node_modules", "babel.config.js", "metro.config.js"]
 }

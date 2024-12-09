@@ -5,7 +5,6 @@ import { v4 as uuidv4 } from "uuid";
 
 const { Schema } = mongoose;
 
-// Sub-schemas
 const preferencesSchema = new Schema(
   {
     travelStyles: {
@@ -90,23 +89,35 @@ const tokensSchema = new Schema(
 
 const badgeSchema = new Schema(
   {
-    name: {
+    name: { type: String, required: [true, "Badge name is required"] },
+    description: { type: String, default: "" },
+    iconUrl: { type: String, default: "https://via.placeholder.com/100" },
+  },
+  { _id: false }
+);
+
+function arrayLimit(val) {
+  return val.length <= 8;
+}
+
+// Add a location field for the user's current position
+// Using GeoJSON format: { type: "Point", coordinates: [lng, lat] }
+const locationSchema = new Schema(
+  {
+    type: {
       type: String,
-      required: [true, "Badge name is required"],
+      enum: ["Point"],
+      required: true,
+      default: "Point",
     },
-    description: {
-      type: String,
-      default: "",
-    },
-    iconUrl: {
-      type: String,
-      default: "https://via.placeholder.com/100",
+    coordinates: {
+      type: [Number], // [longitude, latitude]
+      required: true,
     },
   },
   { _id: false }
 );
 
-// Main User Schema
 const userSchema = new Schema(
   {
     username: {
@@ -140,21 +151,14 @@ const userSchema = new Schema(
           "Password must include one uppercase, one lowercase, one digit, and one special character.",
       },
     },
-    role: {
-      type: String,
-      enum: ["user", "admin"],
-      default: "user",
-    },
+    role: { type: String, enum: ["user", "admin"], default: "user" },
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User", index: true }],
     matches: [
       { type: mongoose.Schema.Types.ObjectId, ref: "User", index: true },
     ],
-    profilePicture: {
-      type: String,
-      default: "", // URL to the profile picture
-    },
+    profilePicture: { type: String, default: "" },
     travelPhotos: {
-      type: [String], // Array of photo URLs
+      type: [String],
       default: [],
       validate: [arrayLimit, "{PATH} exceeds the limit of 8"],
     },
@@ -163,54 +167,31 @@ const userSchema = new Schema(
       maxlength: [150, "Bio must not exceed 150 characters"],
       default: "",
     },
-    profile: {
-      type: preferencesSchema,
-      default: () => ({}),
-    },
-    settings: {
-      type: settingsSchema,
-      default: () => ({}),
-    },
-    status: {
-      type: statusSchema,
-      default: () => ({}),
-    },
-    security: {
-      type: securitySchema,
-      default: () => ({}),
-    },
-    badges: {
-      type: [badgeSchema],
-      default: [],
-    },
-    tokens: {
-      type: tokensSchema,
-      default: () => ({}),
-    },
+    profile: { type: preferencesSchema, default: () => ({}) },
+    settings: { type: settingsSchema, default: () => ({}) },
+    status: { type: statusSchema, default: () => ({}) },
+    security: { type: securitySchema, default: () => ({}) },
+    badges: { type: [badgeSchema], default: [] },
+    tokens: { type: tokensSchema, default: () => ({}) },
+
+    // Current location of the user
+    currentLocation: { type: locationSchema, index: "2dsphere" },
   },
   {
-    timestamps: true, // Automatically manages createdAt and updatedAt
+    timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
   }
 );
 
-// Helper function to limit the array size for travelPhotos
-function arrayLimit(val) {
-  return val.length <= 8; // Limit the array to 8 items
-}
-
-// Indexing for performance
 userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ username: 1 }, { unique: true });
 userSchema.index({ "tokens.refreshToken": 1 });
 
-// Pre-save hook to hash password
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
-
   try {
-    const salt = await bcrypt.genSalt(12); // Increased salt rounds for better security
+    const salt = await bcrypt.genSalt(12);
     this.password = await bcrypt.hash(this.password, salt);
     next();
   } catch (error) {
@@ -218,27 +199,23 @@ userSchema.pre("save", async function (next) {
   }
 });
 
-// Password validation method
 userSchema.methods.validatePassword = async function (password) {
   return bcrypt.compare(password, this.password);
 };
 
-// Method to generate password reset token
 userSchema.methods.generatePasswordReset = function () {
   this.tokens.passwordResetToken = uuidv4();
   this.tokens.passwordResetTokenExpiry = Date.now() + 3600000; // 1 hour
 };
 
-// Exclude sensitive fields from the output
 userSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.password;
   delete obj.tokens;
-  delete obj.security.twoFactorSecret;
+  delete obj.security?.twoFactorSecret;
   return obj;
 };
 
-// Export User model
 const User = mongoose.model("User", userSchema);
 
 export { User };

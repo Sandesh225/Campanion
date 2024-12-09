@@ -1,4 +1,4 @@
-// frontend/src/components/ProfilePreview.tsx
+// src/components/ProfilePreview.tsx
 
 import React from "react";
 import { View, StyleSheet } from "react-native";

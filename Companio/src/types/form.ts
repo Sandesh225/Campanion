@@ -1,5 +1,3 @@
-// frontend/src/types/form.ts
-
 export interface FormData {
   basicInfo: {
     fullName: string;
@@ -12,13 +10,17 @@ export interface FormData {
     activities: string[];
   };
   settings: {
-    privacy: 'public' | 'private';
+    privacy: "public" | "private";
     notifications: {
       emailNotifications: boolean;
       pushNotifications: boolean;
     };
   };
-  profilePicture: any;
+  profilePicture: {
+    uri: string;
+    type: string;
+    name: string;
+  } | null;
   profilePictureUrl: string;
   bio?: string;
 }

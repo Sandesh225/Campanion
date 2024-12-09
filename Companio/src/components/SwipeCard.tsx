@@ -1,11 +1,12 @@
 // src/components/SwipeCard.tsx
 
 import React from "react";
-import { StyleSheet, View, Image, Dimensions } from "react-native";
-import { Card, Text, Button } from "react-native-paper";
+import { View, StyleSheet, Dimensions, TouchableOpacity } from "react-native";
+import { Text, Card, Avatar } from "react-native-paper";
+import { UserProfile } from "../types/api";
 
 interface SwipeCardProps {
-  profile: any; // Define a proper type based on your API response
+  profile: UserProfile;
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
 }
@@ -15,42 +16,51 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
   onSwipeLeft,
   onSwipeRight,
 }) => {
-  const screenWidth = Dimensions.get("window").width;
+  const { width } = Dimensions.get("window");
+
   return (
-    <Card style={[styles.card, { width: screenWidth - 40 }]}>
+    <Card style={[styles.card, { width: width - 20 }]}>
       <Card.Cover
         source={{
-          uri: profile.profilePictureUrl || "https://via.placeholder.com/300",
+          uri:
+            profile.profile.profilePictureUrl ||
+            "https://via.placeholder.com/300",
         }}
       />
       <Card.Content>
-        <Text variant="titleLarge">{profile.username}</Text>
-        <Text variant="bodyMedium">{profile.bio || "No bio available."}</Text>
+        <Text variant="headlineSmall">{profile.profile.fullName}</Text>
+        <Text variant="bodyMedium">@{profile.username}</Text>
+        <Text variant="bodySmall">{profile.profile.bio}</Text>
       </Card.Content>
-      <Card.Actions style={styles.actions}>
-        <Button mode="outlined" onPress={onSwipeLeft} style={styles.button}>
-          Dislike
-        </Button>
-        <Button mode="contained" onPress={onSwipeRight} style={styles.button}>
-          Like
-        </Button>
-      </Card.Actions>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity onPress={onSwipeLeft}>
+          <Avatar.Icon size={40} icon="close" style={styles.dislikeButton} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={onSwipeRight}>
+          <Avatar.Icon size={40} icon="check" style={styles.likeButton} />
+        </TouchableOpacity>
+      </View>
     </Card>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    alignSelf: "center",
-    marginVertical: 20,
+    marginBottom: 20,
+    borderRadius: 10,
+    overflow: "hidden",
+    elevation: 5,
   },
-  actions: {
+  buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    paddingBottom: 10,
+    paddingVertical: 10,
   },
-  button: {
-    width: "40%",
+  dislikeButton: {
+    backgroundColor: "#FF5252",
+  },
+  likeButton: {
+    backgroundColor: "#4CAF50",
   },
 });
 

@@ -1,8 +1,6 @@
-// src/server.js
-
 import dotenv from "dotenv";
 import http from "http";
-import { Server as SocketIOServer } from "socket.io";
+import { Server as SocketIoServer } from "socket.io";
 import jwt from "jsonwebtoken";
 
 import connectDB from "./src/config/db.js";
@@ -18,53 +16,50 @@ const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
 
 // Initialize Socket.IO server
-const io = new SocketIOServer(server, {
+const io = new SocketIoServer(server, {
   cors: {
-    origin: config.clientURL, // Update with your client URL
+    origin: process.env.CORS_ORIGIN || "*", // Restrict to specific origins in production
     methods: ["GET", "POST"],
   },
 });
 
 // Map to store user ID and their socket IDs
-const userSocketMap = new Map();
-
-// Handle Socket.IO connections
 io.on("connection", (socket) => {
-  console.log(`Socket connected: ${socket.id}`);
+  console.log("New client connected:", socket.id);
 
-  // Authenticate socket connection
-  socket.on("authenticate", ({ token }) => {
-    try {
-      const decoded = jwt.verify(token, config.jwtSecret);
-      const userId = decoded.userId;
-
-      // Store user ID and socket ID
-      userSocketMap.set(userId, socket.id);
-      socket.userId = userId;
-
-      console.log(`User ${userId} authenticated with socket ${socket.id}`);
-    } catch (error) {
-      console.log("Socket authentication failed:", error.message);
-      socket.emit("unauthorized");
-      socket.disconnect();
-    }
+  // Handle room joining
+  socket.on("joinRoom", (userId) => {
+    socket.join(userId);
+    console.log(`User ${userId} joined room ${userId}`);
   });
 
-  // Handle disconnection
+  // Handle sending messages
+  socket.on("sendMessage", ({ conversationId, message }) => {
+    console.log(`Message sent to conversation ${conversationId}:`, message);
+
+    // TODO: Save the message to the database
+
+    // Broadcast message to the recipient(s) in the room
+    io.to(conversationId).emit("message", message);
+  });
+
+  // Handle client disconnection
   socket.on("disconnect", () => {
-    if (socket.userId) {
-      userSocketMap.delete(socket.userId);
-    }
-    console.log(`Socket disconnected: ${socket.id}`);
+    console.log("Client disconnected:", socket.id);
   });
 });
 
-// Export io and userSocketMap for use in other modules
-export { io, userSocketMap };
+// Export the Socket.IO instance
+export { io };
 
 // Connect to MongoDB and start the server
-connectDB().then(() => {
-  server.listen(PORT, () => {
-    logger.info(`Server running on port ${PORT}`);
+connectDB()
+  .then(() => {
+    server.listen(PORT, () => {
+      logger.info(`Server running on port ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    logger.error("Failed to connect to the database:", error);
+    process.exit(1); // Exit the application if the database connection fails
   });
-});

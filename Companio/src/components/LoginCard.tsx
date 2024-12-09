@@ -1,24 +1,16 @@
 import React, { useState, useContext } from "react";
-import {
-  View,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  Text,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
-import * as Animatable from "react-native-animatable";
+import { View, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { TextInput, Button, Text } from "react-native-paper";
 import { AuthContext } from "../context/AuthContext";
-import PlaneAnimation from "./PlaneAnimation";
 import { Formik } from "formik";
 import * as Yup from "yup";
+import * as Animatable from "react-native-animatable";
+import PlaneAnimation from "./PlaneAnimation";
 
 const LoginCard: React.FC = () => {
   const { login } = useContext(AuthContext);
-  const [showPlane, setShowPlane] = useState<boolean>(false);
+  const [showPlane, setShowPlane] = useState(false);
 
-  // Validation schema using Yup
   const LoginSchema = Yup.object().shape({
     email: Yup.string().email("Invalid email").required("Email is required"),
     password: Yup.string().required("Password is required"),
@@ -28,12 +20,9 @@ const LoginCard: React.FC = () => {
     try {
       await login(values.email, values.password);
       setShowPlane(true);
-      // Hide plane after animation completes (e.g., 3 seconds)
-      setTimeout(() => {
-        setShowPlane(false);
-      }, 3000);
-    } catch (error) {
-      // Error handled in AuthContext
+      setTimeout(() => setShowPlane(false), 3000);
+    } catch (error: any) {
+      Alert.alert("Login Failed", error.message || "Please try again.");
     }
   };
 
@@ -58,50 +47,41 @@ const LoginCard: React.FC = () => {
         }) => (
           <>
             <TextInput
-              style={styles.input}
-              placeholder="Email or Username"
-              placeholderTextColor="#3C4043"
+              label="Email"
+              value={values.email}
               onChangeText={handleChange("email")}
               onBlur={handleBlur("email")}
-              value={values.email}
-              autoCapitalize="none"
+              mode="outlined"
               keyboardType="email-address"
-              textContentType="username"
-            />
-            {errors.email && touched.email ? (
-              <Text style={styles.errorText}>{errors.email}</Text>
-            ) : null}
-            <TextInput
+              error={!!(errors.email && touched.email)}
               style={styles.input}
-              placeholder="Password"
-              placeholderTextColor="#3C4043"
-              secureTextEntry
+            />
+            <TextInput
+              label="Password"
+              value={values.password}
               onChangeText={handleChange("password")}
               onBlur={handleBlur("password")}
-              value={values.password}
-              textContentType="password"
+              mode="outlined"
+              secureTextEntry
+              error={!!(errors.password && touched.password)}
+              style={styles.input}
             />
-            {errors.password && touched.password ? (
-              <Text style={styles.errorText}>{errors.password}</Text>
-            ) : null}
-            <TouchableOpacity
-              style={styles.button}
+            <Button
+              mode="contained"
               onPress={() => handleSubmit()}
-              activeOpacity={0.8}
               disabled={isSubmitting}
+              style={styles.button}
             >
-              <Animatable.View
-                animation="fadeIn"
-                duration={500}
-                style={styles.buttonContent}
-              >
-                {isSubmitting ? (
-                  <ActivityIndicator size="small" color="#3C4043" />
-                ) : (
-                  <Text style={styles.buttonText}>✈️ Login</Text>
-                )}
-              </Animatable.View>
-            </TouchableOpacity>
+              {isSubmitting ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                "Login"
+              )}
+            </Button>
+            <Text style={styles.registerText}>
+              Don't have an account?{" "}
+              <Text style={styles.registerLink}>Register</Text>
+            </Text>
           </>
         )}
       </Formik>
@@ -112,56 +92,30 @@ const LoginCard: React.FC = () => {
 
 const styles = StyleSheet.create({
   card: {
-    position: "absolute",
-    top: "25%",
-    alignSelf: "center",
-    width: "85%",
-    backgroundColor: "rgba(255,255,255,0.85)",
-    borderRadius: 20,
-    padding: 25,
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 15,
-    elevation: 10,
+    padding: 20,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    borderRadius: 10,
+    marginHorizontal: 20,
+    elevation: 5,
   },
   logo: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#4285F4",
+    fontSize: 28,
     textAlign: "center",
     marginBottom: 20,
   },
   input: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#3C4043",
-    borderRadius: 8,
-    padding: 12,
-    marginVertical: 5,
-    fontSize: 16,
-    color: "#000000",
-  },
-  errorText: {
-    color: "#FF0000",
-    fontSize: 12,
-    marginBottom: 5,
-    marginLeft: 5,
+    marginBottom: 10,
   },
   button: {
+    marginTop: 10,
     backgroundColor: "#FBBC05",
-    paddingVertical: 15,
-    borderRadius: 8,
-    marginTop: 15,
-    alignItems: "center",
   },
-  buttonContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+  registerText: {
+    textAlign: "center",
+    marginTop: 10,
   },
-  buttonText: {
-    color: "#3C4043",
-    fontSize: 18,
+  registerLink: {
+    color: "#6200ee",
     fontWeight: "bold",
   },
 });

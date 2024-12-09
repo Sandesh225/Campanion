@@ -1,13 +1,13 @@
 // src/components/MultiStepForm/StepOne.tsx
 
 import React, { useEffect, useState, useCallback } from "react";
-import { View, StyleSheet, Alert } from "react-native";
-import { Button, Text, ActivityIndicator } from "react-native-paper";
+import { View, StyleSheet, ActivityIndicator } from "react-native";
+import { Button, Text } from "react-native-paper";
 import { useFormikContext } from "formik";
-
 import FormikTextInput from "../common/FormikTextInput";
 import api from "../../services/api";
-import type { FormData } from "../../types/form"; // Type-only import
+import { FormData } from "../../types/form";
+import { showToast } from "../../utils/toast";
 
 interface StepOneProps {
   nextStep: () => void;
@@ -75,7 +75,11 @@ const StepOne: React.FC<StepOneProps> = ({ nextStep }) => {
     if (usernameAvailable) {
       nextStep();
     } else {
-      Alert.alert("Invalid Username", "Please choose a different username.");
+      showToast(
+        "error",
+        "Invalid Username",
+        "Please choose a different username."
+      );
     }
   };
 

@@ -1,58 +1,54 @@
-// src/components/Badges.tsx
-
-import React, { useEffect, useState, useContext } from "react";
-import { FlatList, StyleSheet, View, Alert } from "react-native";
+import React, { useContext, useState } from "react";
+import {
+  FlatList,
+  StyleSheet,
+  View,
+  Alert,
+  RefreshControl,
+} from "react-native";
 import { Card, Avatar, Text } from "react-native-paper";
 import api from "../services/api";
 import { Badge, ApiResponse } from "../types/api";
-import { useAuth } from "../hooks/useAuth"; // Custom hook to access AuthContext
+import { AuthContext } from "../context/AuthContext";
+import { useQuery } from "@tanstack/react-query";
 
 const Badges: React.FC = () => {
-  const { userId } = useAuth();
-  const [badges, setBadges] = useState<Badge[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const { user } = useContext(AuthContext);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
 
-  const fetchBadges = async () => {
-    if (!userId) {
-      Alert.alert("Error", "User ID not found.");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const response = await api.get<ApiResponse<Badge[]>>(
-        `/users/${userId}/badges`
+  const {
+    data = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery<Badge[], Error>(
+    ["badges", user?.id],
+    async () => {
+      const res = await api.get<ApiResponse<Badge[]>>(
+        `/users/${user?.id}/badges`
       );
-      if (response.data.success) {
-        setBadges(response.data.data);
+      if (res.data.success) {
+        return res.data.data;
       } else {
-        Alert.alert("Error", response.data.message);
+        throw new Error(res.data.message || "Failed to fetch badges.");
       }
-    } catch (error: any) {
-      console.error("Fetch badges error:", error);
-      Alert.alert("Error", "Failed to fetch badges.");
-    } finally {
-      setLoading(false);
+    },
+    {
+      enabled: !!user, // Only fetch data if user exists
+      onError: (err: Error) => {
+        console.error("Fetch badges error:", err);
+        Alert.alert("Error", "Failed to fetch badges.");
+      },
     }
-  };
-
-  useEffect(() => {
-    fetchBadges();
-  }, []);
-
-  const renderItem = ({ item }: { item: Badge }) => (
-    <Card style={styles.card}>
-      <Card.Title
-        title={item.name}
-        subtitle={item.description}
-        left={(props) => (
-          <Avatar.Icon {...props} icon={item.iconUrl || "badge"} />
-        )}
-      />
-    </Card>
   );
 
-  if (loading) {
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  };
+
+  if (isLoading) {
     return (
       <View style={styles.loader}>
         <Text>Loading badges...</Text>
@@ -60,14 +56,44 @@ const Badges: React.FC = () => {
     );
   }
 
+  if (error) {
+    return (
+      <View style={styles.loader}>
+        <Text>Error loading badges.</Text>
+      </View>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <View style={styles.loader}>
+        <Text style={styles.emptyText}>No badges earned yet.</Text>
+      </View>
+    );
+  }
+
   return (
     <FlatList
-      data={badges}
+      data={data}
       keyExtractor={(item) => item.name}
-      renderItem={renderItem}
+      renderItem={({ item }) => (
+        <Card style={styles.card}>
+          <Card.Title
+            title={item.name}
+            subtitle={item.description}
+            left={(props) =>
+              item.iconUrl ? (
+                <Avatar.Image {...props} source={{ uri: item.iconUrl }} />
+              ) : (
+                <Avatar.Icon {...props} icon="badge" />
+              )
+            }
+          />
+        </Card>
+      )}
       contentContainerStyle={styles.list}
-      ListEmptyComponent={
-        <Text style={styles.emptyText}>No badges earned yet.</Text>
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     />
   );
@@ -75,12 +101,14 @@ const Badges: React.FC = () => {
 
 const styles = StyleSheet.create({
   list: {
-    paddingBottom: 20,
+    padding: 20,
   },
   card: {
     marginBottom: 10,
+    elevation: 2,
   },
   loader: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
@@ -88,7 +116,8 @@ const styles = StyleSheet.create({
   emptyText: {
     textAlign: "center",
     marginTop: 20,
-    color: "#555",
+    fontSize: 16,
+    color: "#777",
   },
 });
 

@@ -1,55 +1,64 @@
-// src/screens/Home/HomeScreen.tsx
-
 import React from "react";
-import { StyleSheet, View } from "react-native";
-import { Button, Text, Surface } from "react-native-paper";
-import { useNavigation, NavigationProp } from "@react-navigation/native";
+import { View, StyleSheet } from "react-native";
+import { Text, Button } from "react-native-paper";
+import { useAppSelector } from "../../store/hooks";
+import { selectAuthUser } from "../../slices/authSlice";
+import { useGetUserProfileQuery, useLogoutMutation } from "../../services/api";
+import { useNavigation } from "@react-navigation/native"; // <-- Import here
+import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../../types/navigation";
-import CustomAppBar from "../../components/common/CustomAppBar";
-import useAuth from "../../hooks/useAuth"; // Correct import
 
-type NavigationProps = NavigationProp<RootStackParamList>;
-
+type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, "Home">;
 const HomeScreen: React.FC = () => {
-  const navigation = useNavigation<NavigationProps>();
-  const { userId } = useAuth(); // Use the hook
+  const user = useAppSelector(selectAuthUser);
+  const { data, error, isLoading } = useGetUserProfileQuery(user?.id || "", {
+    skip: !user?.id,
+  });
+  const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
 
-  const navigateToSwipe = () => {
-    navigation.navigate("Swipe");
+  // Use the useNavigation hook here
+  const navigation = useNavigation<HomeScreenNavigationProp>();
+
+  const handleLogout = async () => {
+    try {
+      await logout().unwrap();
+      navigation.reset({ index: 0, routes: [{ name: "Login" }] });
+    } catch (error) {
+      // Handled by onQueryStarted in api
+    }
   };
 
-  const navigateToDashboard = () => {
-    navigation.navigate("Dashboard");
-  };
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <Text>Loading profile...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <Text>Error fetching profile. Please try again later.</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <CustomAppBar title="Home" showProfileButton={true} />
-      <Surface style={styles.content}>
-        <Text variant="headlineMedium" style={styles.welcomeText}>
-          Welcome to Companion App!
-        </Text>
-        <Button
-          mode="contained"
-          onPress={navigateToSwipe}
-          style={styles.button}
-          contentStyle={styles.buttonContent}
-          accessibilityLabel="Start Swiping"
-          accessibilityHint="Navigate to the swipe screen to find companions"
-        >
-          Start Swiping
-        </Button>
-        <Button
-          mode="outlined"
-          onPress={navigateToDashboard}
-          style={styles.button}
-          contentStyle={styles.buttonContent}
-          accessibilityLabel="Go to Dashboard"
-          accessibilityHint="Navigate to your dashboard to view matches and badges"
-        >
-          Go to Dashboard
-        </Button>
-      </Surface>
+      <Text style={styles.title}>
+        Welcome, {data?.data?.username || "Traveler"}!
+      </Text>
+      {/* Just a demonstration button */}
+      <Button
+        mode="contained"
+        onPress={handleLogout}
+        loading={isLoggingOut}
+        disabled={isLoggingOut}
+        style={styles.button}
+      >
+        Logout
+      </Button>
     </View>
   );
 };
@@ -57,26 +66,22 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  content: {
-    margin: 20,
-    padding: 20,
-    borderRadius: 10,
-    backgroundColor: "#fff",
-    elevation: 4,
+    justifyContent: "center",
+    padding: 16,
     alignItems: "center",
+    backgroundColor: "#fff",
   },
-  welcomeText: {
-    marginBottom: 30,
-    textAlign: "center",
+  title: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 24,
     color: "#6200ee",
+    textAlign: "center",
   },
   button: {
-    width: "80%",
-    marginVertical: 10,
-  },
-  buttonContent: {
-    paddingVertical: 10,
+    marginTop: 16,
+    paddingVertical: 8,
+    width: "60%",
   },
 });
 

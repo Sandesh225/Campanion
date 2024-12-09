@@ -1,82 +1,104 @@
 // src/types/api.ts
 
-export interface ApiResponse<T> {
-  statusCode: number;
-  data: T;
-  message: string;
-  errors: any[];
-  success: boolean;
-}
-
 export interface UserProfile {
-  _id: string;
-  username: string;
-  email: string;
-  profile: {
-    fullName: string;
-    bio?: string;
-    profilePictureUrl?: string;
-    preferences: {
-      travelStyles: string[];
-      interests: string[];
-      activities: string[];
-    };
-    settings: {
-      privacy: string;
-      notifications: {
-        emailNotifications: boolean;
-        pushNotifications: boolean;
-      };
-    };
-    badges?: Badge[];
-  };
-}
+  profilePictureUrl?: string;
+  fullName: string;
+  bio?: string;
+  preferences: Preferences;
 
-export interface Badge {
+  travelPhotos: string[];
+  settings?: UserSettings;
   id: string;
-  name: string;
-  description: string;
-  iconUrl: string;
+  badges: Badge[];
 }
 
-export interface RefreshTokenResponse {
-  accessToken: string;
-  refreshToken: string;
-}
-
-export interface LoginResponse {
-  accessToken: string;
-  refreshToken: string;
-  userId: string;
-}
-
-export interface RegisterResponse {
-  accessToken: string;
-  refreshToken: string;
-  userId: string;
-}
-
-export interface ChatMessage {
-  _id: string;
-  senderId: string;
-  message: string;
-  timestamp: string;
-}
-
-export interface UpdateProfileResponse {
-  _id: string;
+export interface User extends UserProfile {
   username: string;
   email: string;
-  profile: UserProfile["profile"];
+  accessToken: string;
+}
+
+export interface AuthData {
+  accessToken: string;
+  user: User;
+  refreshToken: string;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
 }
 
 export interface UploadProfilePictureResponse {
   profilePictureUrl: string;
 }
 
-export interface Match {
-  id: string; // or _id, based on API response
-  matchedUserName: string;
-  matchedUserPhotoUrl?: string;
-  bio?: string;
+export interface Badge {
+  name: string;
+  description: string;
+  iconUrl?: string;
+}
+export interface Preferences {
+  travelStyles: string[];
+  interests: string[];
+  activities: string[];
+  // Add other preference fields as needed
+}
+
+export interface Badge {
+  name: string;
+  description: string;
+  iconUrl?: string;
+}
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  content: string;
+  timestamp: string;
+}
+
+export interface Trip {
+  id: string;
+  title: string;
+  description: string;
+  origin: string;
+  destination: string;
+  startDate: string;
+  endDate: string;
+  travelMode: string;
+  budget: {
+    amount: number;
+    currency: string;
+  };
+  participants: string[];
+}
+
+export interface Preferences {
+  travelStyles: string[];
+  interests: string[];
+  activities: string[];
+}
+
+export interface UserSettings {
+  privacy: "public" | "private";
+  notifications: {
+    emailNotifications: boolean;
+    pushNotifications: boolean;
+  };
+}
+
+export interface LikePayload {
+  userId: string;
+  likedUserId: string;
+}
+
+export interface UpdateProfilePayload {
+  userId: string;
+  profile: Partial<UserProfile>;
+}
+
+export interface UploadPhotoPayload {
+  userId: string;
+  file: any;
 }

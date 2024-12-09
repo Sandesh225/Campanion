@@ -1,124 +1,93 @@
-// frontend/src/screens/Match/MatchScreen.tsx
+// src/screens/Match/MatchScreen.tsx
 
-import React, { useEffect, useState, useContext } from "react";
-import {
-  Alert,
-  FlatList,
-  StyleSheet,
-  View,
-  RefreshControl,
-} from "react-native";
-import {
-  Card,
-  Avatar,
-  Text,
-  Button,
-  ActivityIndicator,
-} from "react-native-paper";
+import React, { useState, useEffect, useContext } from "react";
+import { View, StyleSheet, FlatList, TouchableOpacity } from "react-native";
+import { Avatar, Text } from "react-native-paper";
+import { useNavigation } from "@react-navigation/native";
 import api from "../../services/api";
 import { UserProfile, ApiResponse } from "../../types/api";
-import { AuthContext } from "../../context/AuthContext";
-import { useNavigation, NavigationProp } from "@react-navigation/native";
 import { RootStackParamList } from "../../types/navigation";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { AuthContext } from "../../context/AuthContext";
+import { showToast } from "../../utils/toast";
+
+type NavigationProps = StackNavigationProp<RootStackParamList>;
 
 const MatchScreen: React.FC = () => {
-  const { userId } = useContext(AuthContext);
   const [matches, setMatches] = useState<UserProfile[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [refreshing, setRefreshing] = useState<boolean>(false);
-
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-
-  const fetchMatches = async () => {
-    if (!userId) {
-      Alert.alert("Error", "User ID not found.");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const response = await api.get<ApiResponse<UserProfile[]>>(
-        "/users/matchmaking",
-        {
-          params: { userId },
-        }
-      );
-      if (response.data.success) {
-        setMatches(response.data.data);
-      } else {
-        console.error("Failed to fetch matches:", response.data.message);
-        Alert.alert("Error", "Failed to fetch matches.");
-      }
-    } catch (error: any) {
-      console.error("Error fetching matches:", error);
-      Alert.alert("Error", "An error occurred while fetching matches.");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+  const navigation = useNavigation<NavigationProps>();
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
+    const fetchMatches = async () => {
+      try {
+        const response = await api.get<ApiResponse<UserProfile[]>>(
+          "/users/matches"
+        );
+        if (response.data.success) {
+          setMatches(response.data.data);
+        } else {
+          showToast(
+            "error",
+            "Error",
+            response.data.message || "Failed to load matches."
+          );
+        }
+      } catch (error: any) {
+        console.error("Error fetching matches:", error);
+        showToast("error", "Error", "Failed to load matches.");
+      }
+    };
+
     fetchMatches();
   }, []);
 
-  const handleRefresh = () => {
-    setRefreshing(true);
-    fetchMatches();
+  const startChat = (matchedUserId: string) => {
+    // Create or get conversationId
+    // For simplicity, we'll assume we get it from the server
+    api
+      .post<ApiResponse<{ conversationId: string }>>("/chat/start", {
+        userId: matchedUserId,
+      })
+      .then((response) => {
+        if (response.data.success) {
+          navigation.navigate("Chat", {
+            conversationId: response.data.data.conversationId,
+          });
+        } else {
+          showToast(
+            "error",
+            "Error",
+            response.data.message || "Failed to start chat."
+          );
+        }
+      })
+      .catch((error) => {
+        console.error("Error starting chat:", error);
+        showToast("error", "Error", "Failed to start chat.");
+      });
   };
-
-  const handleConnect = (matchedUserId: string) => {
-    // Implement connection logic, e.g., send a request or navigate to chat
-    Alert.alert("Connect", `You have connected with user ID: ${matchedUserId}`);
-    navigation.navigate("Chat", { otherUserId: matchedUserId });
-  };
-
-  const renderItem = ({ item }: { item: UserProfile }) => (
-    <Card style={styles.card}>
-      <Card.Title
-        title={item.profile.fullName}
-        subtitle={`@${item.username}`}
-        left={(props) => (
-          <Avatar.Image
-            {...props}
-            source={{
-              uri:
-                item.profile.profilePictureUrl ||
-                "https://via.placeholder.com/100",
-            }}
-          />
-        )}
-      />
-      <Card.Content>
-        <Text>{item.profile.bio || "No bio available."}</Text>
-      </Card.Content>
-      <Card.Actions>
-        <Button onPress={() => handleConnect(item._id)}>Connect</Button>
-      </Card.Actions>
-    </Card>
-  );
-
-  if (loading) {
-    return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#4CAF50" />
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
       <FlatList
         data={matches}
-        keyExtractor={(item) => item._id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.list}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>No matches found.</Text>
-        }
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.item}
+            onPress={() => startChat(item.id)}
+          >
+            <Avatar.Image
+              size={50}
+              source={{
+                uri: item.profilePictureUrl || "https://via.placeholder.com/50",
+              }}
+            />
+            <Text style={styles.name}>{item.fullName}</Text>
+          </TouchableOpacity>
+        )}
+        ListEmptyComponent={<Text>No matches found.</Text>}
       />
     </View>
   );
@@ -129,21 +98,14 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 10,
   },
-  list: {
-    paddingBottom: 20,
-  },
-  card: {
-    marginBottom: 10,
-  },
-  loaderContainer: {
-    flex: 1,
-    justifyContent: "center",
+  item: {
+    flexDirection: "row",
     alignItems: "center",
+    paddingVertical: 10,
   },
-  emptyText: {
-    textAlign: "center",
-    marginTop: 20,
-    color: "#555",
+  name: {
+    marginLeft: 15,
+    fontSize: 18,
   },
 });
 

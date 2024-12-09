@@ -1,11 +1,10 @@
-// frontend/src/components/MultiStepForm/Completion.tsx
-
 import React from "react";
 import { StyleSheet } from "react-native";
 import { Button, Text, Surface } from "react-native-paper";
 import LottieView from "lottie-react-native";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
-import { RootStackParamList } from "../../types/navigation";
+import { RootStackParamList } from "../../types";
+import { showToast } from "../../utils/toast";
 
 type NavigationProps = NavigationProp<RootStackParamList>;
 
@@ -14,12 +13,17 @@ const Completion: React.FC = () => {
 
   const handleGoToDashboard = () => {
     navigation.navigate("Dashboard");
+    showToast(
+      "success",
+      "Welcome!",
+      "Your profile has been set up successfully."
+    );
   };
 
   return (
     <Surface style={styles.container}>
       <LottieView
-        source={require("../../assets/congratulations.json")} // Ensure this file exists
+        source={require("../../assets/animations/success.json")} // Ensure this file exists
         autoPlay
         loop={false}
         style={styles.animation}

@@ -1,4 +1,4 @@
-// frontend/src/components/MultiStepForm/ProfileWizard.tsx
+// src/components/MultiStepForm/ProfileWizard.tsx
 
 import React, { useState, useContext, useCallback } from "react";
 import { StyleSheet, Alert, ScrollView, View } from "react-native";
@@ -15,10 +15,11 @@ import {
   ApiResponse,
   UpdateProfileResponse,
   UploadProfilePictureResponse,
+  User,
 } from "../../types/api";
 import type { FormData } from "../../types/form"; // Type-only import
 import { useNavigation, NavigationProp } from "@react-navigation/native";
-import { RootStackParamList } from "../../types/navigation";
+import { RootStackParamList } from "../../types";
 import { showToast } from "../../utils/toast";
 
 const initialValues: FormData = {
@@ -42,12 +43,13 @@ const initialValues: FormData = {
   profilePicture: null,
   profilePictureUrl: "",
   bio: "",
+  participants: [], // Added participants
 };
 
 const ProfileWizard: React.FC = () => {
   const [step, setStep] = useState<number>(1);
-  const totalSteps = 5; // Increased due to Completion step
-  const { userId, hasProfile } = useContext(AuthContext);
+  const totalSteps = 5; // Including Completion step
+  const { user, setUser } = useContext(AuthContext);
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   const nextStep = useCallback(
@@ -61,7 +63,7 @@ const ProfileWizard: React.FC = () => {
 
   const handleSubmit = useCallback(
     async (values: FormData, actions: FormikHelpers<FormData>) => {
-      if (!userId) {
+      if (!user) {
         showToast("info", "User not authenticated.");
         return;
       }
@@ -78,7 +80,7 @@ const ProfileWizard: React.FC = () => {
 
           const uploadResponse = await api.post<
             ApiResponse<UploadProfilePictureResponse>
-          >(`/users/${userId}/profile/picture`, formData, {
+          >(`/users/${user.id}/profile/picture`, formData, {
             headers: {
               "Content-Type": "multipart/form-data",
             },
@@ -104,13 +106,14 @@ const ProfileWizard: React.FC = () => {
           },
         };
 
-        const response = await api.put<ApiResponse<UpdateProfileResponse>>(
-          `/users/${userId}`,
+        const response = await api.put<ApiResponse<User>>(
+          `/users/${user.id}`,
           profileData
         );
 
         if (response.data.success) {
           showToast("success", "Success", "Profile created successfully!");
+          setUser(response.data.data); // Now response.data.data is of type User
           nextStep();
         } else {
           throw new Error(response.data.message);
@@ -119,17 +122,17 @@ const ProfileWizard: React.FC = () => {
         console.error("Profile submission error:", error);
         showToast(
           "error",
+          "Profile Creation Failed",
           error.message || "Failed to create profile. Please try again."
         );
       } finally {
         actions.setSubmitting(false);
       }
     },
-    [userId, nextStep]
+    [user, nextStep, setUser]
   );
 
-  const handleSkip = useCallback(async () => {
-    // Optionally, you can set default profile data or handle accordingly
+  const handleSkip = useCallback(() => {
     Alert.alert(
       "Skip Profile Setup",
       "Are you sure you want to skip setting up your profile?",

@@ -1,7 +1,6 @@
-// src/components/common/ErrorBoundary.tsx
-
 import React, { Component, ErrorInfo, ReactNode } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Button } from "react-native";
+import { showErrorToast } from "../../utils/toast";
 
 interface Props {
   children: ReactNode;
@@ -9,7 +8,6 @@ interface Props {
 
 interface State {
   hasError: boolean;
-  error?: Error;
 }
 
 class ErrorBoundary extends Component<Props, State> {
@@ -18,21 +16,25 @@ class ErrorBoundary extends Component<Props, State> {
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+  static getDerivedStateFromError(_: Error): State {
+    return { hasError: true };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log error to an error reporting service
-    console.error("ErrorBoundary caught an error", error, errorInfo);
+    console.error("Uncaught error:", error, errorInfo);
+    showErrorToast("An unexpected error occurred.", error.message);
   }
 
+  handleRetry = (): void => {
+    this.setState({ hasError: false });
+  };
+
   render() {
-    if (this.state.hasError && this.state.error) {
+    if (this.state.hasError) {
       return (
         <View style={styles.container}>
           <Text style={styles.title}>Something went wrong.</Text>
-          <Text style={styles.error}>{this.state.error.message}</Text>
+          <Button title="Try Again" onPress={this.handleRetry} />
         </View>
       );
     }
@@ -47,14 +49,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 16,
+    backgroundColor: "#fff",
   },
   title: {
-    fontSize: 24,
-    marginBottom: 10,
-  },
-  error: {
-    fontSize: 16,
-    color: "red",
+    fontSize: 18,
+    marginBottom: 20,
+    color: "#ff0000",
   },
 });
 

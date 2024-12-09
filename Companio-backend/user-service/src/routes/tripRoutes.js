@@ -6,33 +6,60 @@ import {
   getTripById,
   updateTrip,
   deleteTrip,
+  addParticipant,
+  updateParticipant,
+  addMilestone,
+  updateMilestone,
+  deleteMilestone,
+  addWaypoint,
+  deleteWaypoint,
 } from "../controllers/tripController.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
-import authorize from "../middlewares/authorize.js";
 import validateRequest from "../middlewares/validateRequest.js";
 import {
   createTripSchema,
   updateTripSchema,
+  addParticipantsSchema,
+  updateParticipantSchema,
+  milestoneSchema,
+  waypointSchema,
 } from "../validations/tripValidation.js";
 
 const router = express.Router();
 
-// Apply authentication middleware to all trip routes
+// Apply authentication middleware
 router.use(authMiddleware);
 
-// Create Trip
+// Trip CRUD
 router.post("/", validateRequest(createTripSchema), createTrip);
-
-// Get User's Trips
 router.get("/", getUserTrips);
-
-// Get Specific Trip
 router.get("/:id", getTripById);
-
-// Update Trip
 router.put("/:id", validateRequest(updateTripSchema), updateTrip);
-
-// Delete Trip (Soft Delete)
 router.delete("/:id", deleteTrip);
+
+// Participants management
+router.post(
+  "/:id/participants",
+  validateRequest(addParticipantsSchema),
+  addParticipant
+);
+router.put(
+  "/:id/participants/:participantId",
+  validateRequest(updateParticipantSchema),
+  updateParticipant
+);
+
+// Milestones management
+router.post("/:id/milestones", validateRequest(milestoneSchema), addMilestone);
+router.put(
+  "/:id/milestones/:milestoneId",
+  validateRequest(milestoneSchema),
+  updateMilestone
+);
+router.delete("/:id/milestones/:milestoneId", deleteMilestone);
+
+// Waypoints management
+router.post("/:id/waypoints", validateRequest(waypointSchema), addWaypoint);
+router.delete("/:id/waypoints/:index", deleteWaypoint);
 
 export default router;
