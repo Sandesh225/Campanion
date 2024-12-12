@@ -1,23 +1,46 @@
-// src/components/Common/Button.tsx
+// src/components/common/Button.tsx
 
-import React from 'react';
-import {Button as PaperButton, ButtonProps} from 'react-native-paper';
+import React, { FC, memo } from "react";
+import { Button as PaperButton, useTheme } from "react-native-paper";
+import { StyleProp, ViewStyle } from "react-native";
 
-interface CustomButtonProps extends ButtonProps {
-  label: string;
+interface ButtonProps {
+  onPress: () => void;
+  text: string;
+  mode?: "text" | "outlined" | "contained";
+  disabled?: boolean;
+  loading?: boolean;
+  accessibilityLabel?: string;
+  style?: StyleProp<ViewStyle>;
+  icon?: string;
 }
 
-const CustomButton: React.FC<CustomButtonProps> = ({label, ...props}) => {
+const Button: FC<ButtonProps> = ({
+  onPress,
+  text,
+  mode = "contained",
+  disabled = false,
+  loading = false,
+  accessibilityLabel,
+  style,
+  icon,
+}) => {
+  const theme = useTheme();
+
   return (
     <PaperButton
-      mode="contained"
-      {...props}
-      labelStyle={{fontSize: 16}}
-      contentStyle={{paddingVertical: 8}}
-      style={{marginVertical: 8}}>
-      {label}
+      mode={mode}
+      onPress={onPress}
+      disabled={disabled}
+      loading={loading}
+      accessibilityLabel={accessibilityLabel || text}
+      accessibilityRole="button"
+      style={[{ borderRadius: 24, paddingVertical: 8 }, style]}
+      icon={icon}
+    >
+      {text}
     </PaperButton>
   );
 };
 
-export default React.memo(CustomButton);
+export default memo(Button);

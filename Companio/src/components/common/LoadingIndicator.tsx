@@ -1,11 +1,11 @@
-// src/components/common/LoadingIndicator.tsx
+// src/components/Common/LoadingIndicator.tsx
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { ActivityIndicator } from "react-native-paper";
 
 const LoadingIndicator: React.FC = () => (
   <View style={styles.container}>
-    <ActivityIndicator size="large" color="#6200ee" />
+    <ActivityIndicator animating={true} size="large" />
   </View>
 );
 

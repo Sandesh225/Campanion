@@ -1,0 +1,15 @@
+{
+  "welcome": "Welcome",
+  "login": "Log In",
+  "register": "Register",
+  "forgot_password": "Forgot Password?",
+  "logout": "Logout",
+  "search_placeholder": "Search for companions or activities...",
+  "profile": "Profile",
+  "edit_profile": "Edit Profile",
+  "create_trip": "Create Trip",
+  "plan_trip": "Plan a Trip",
+  "discover_new_trips": "Discover New Trips",
+  "find_companions": "Find Companions",
+  "nearby_activities": "Nearby Activities"
+}

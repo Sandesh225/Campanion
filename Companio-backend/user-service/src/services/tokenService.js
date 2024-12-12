@@ -1,29 +1,28 @@
-// src/services/tokenService.js
 import jwt from "jsonwebtoken";
-import config from "../config/index.js"; // Assuming your config is loading JWT secrets from env variables
+import config from "../config/index.js";
 
 // Generate Access Token
 export const generateAccessToken = (userId, role) => {
   return jwt.sign(
-    { userId, role },
-    config.jwtSecret, // Make sure this comes from your environment variable
-    { expiresIn: "1h" } // Shorter expiration for access token (e.g., 1 hour)
+    { id: userId, role }, // Ensure 'id' is used consistently
+    config.jwtSecret,
+    { expiresIn: "1h" }
   );
 };
 
 // Generate Refresh Token
 export const generateRefreshToken = (userId) => {
   return jwt.sign(
-    { userId },
-    config.jwtRefreshSecret, // Should be different from access token secret
-    { expiresIn: "7d" } // Longer expiration for refresh token (e.g., 7 days)
+    { id: userId }, // Consistently use 'id'
+    config.jwtRefreshSecret,
+    { expiresIn: "7d" }
   );
 };
 
 // Verify Access Token
 export const verifyAccessToken = (token) => {
   try {
-    return jwt.verify(token, config.jwtSecret); // Verify and decode the access token
+    return jwt.verify(token, config.jwtSecret);
   } catch (error) {
     throw new Error("Invalid or expired access token");
   }
@@ -32,7 +31,7 @@ export const verifyAccessToken = (token) => {
 // Verify Refresh Token
 export const verifyRefreshToken = (token) => {
   try {
-    return jwt.verify(token, config.jwtRefreshSecret); // Verify and decode the refresh token
+    return jwt.verify(token, config.jwtRefreshSecret);
   } catch (error) {
     throw new Error("Invalid or expired refresh token");
   }

@@ -1,5 +1,4 @@
 // src/routes/swipeRoutes.js
-
 import express from "express";
 import authMiddleware from "../middlewares/authMiddleware.js";
 import { handleSwipe } from "../controllers/swipeController.js";

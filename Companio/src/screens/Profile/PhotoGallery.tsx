@@ -1,93 +1,43 @@
-// src/components/Profile/PhotoGallery.tsx
+// src/components/profile/PhotoGallery.tsx
 
 import React from "react";
-import {
-  View,
-  StyleSheet,
-  Image,
-  TouchableOpacity,
-  Dimensions,
-  Alert,
-} from "react-native";
-import { IconButton } from "react-native-paper";
-import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import { View, StyleSheet, Image, FlatList } from "react-native";
+import useAppSelector from "../../hooks/useAppSelector";
+import { selectAuthUser } from "../../features/authSlice";
 
-interface PhotoGalleryProps {
-  photos: string[];
-  onDeletePhoto: (photoUrl: string) => void;
-  editMode: boolean;
-}
+const PhotoGallery: React.FC = () => {
+  const user = useAppSelector(selectAuthUser);
+  const photos = user?.profilePictureUrl
+    ? [user.profilePictureUrl]
+    : ["https://via.placeholder.com/150"];
 
-const { width } = Dimensions.get("window");
-const PHOTO_SIZE = (width - 60) / 3;
-
-const PhotoGallery: React.FC<PhotoGalleryProps> = ({
-  photos,
-  onDeletePhoto,
-  editMode,
-}) => {
-  const handleLongPress = (photoUrl: string) => {
-    if (editMode) {
-      Alert.alert(
-        "Delete Photo",
-        "Are you sure you want to delete this photo?",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete",
-            style: "destructive",
-            onPress: () => onDeletePhoto(photoUrl),
-          },
-        ]
-      );
-    }
-  };
+  const renderItem = ({ item }: { item: string }) => (
+    <Image source={{ uri: item }} style={styles.photo} />
+  );
 
   return (
-    <View style={styles.container}>
-      {photos.map((photoUrl) => (
-        <TouchableOpacity
-          key={photoUrl}
-          onPress={() => {
-            // Implement image preview if needed
-          }}
-          onLongPress={() => handleLongPress(photoUrl)}
-          accessibilityLabel="View Photo"
-        >
-          <Image source={{ uri: photoUrl }} style={styles.photo} />
-          {editMode && (
-            <IconButton
-              icon="delete-circle"
-              size={24}
-              style={styles.deleteIcon}
-              onPress={() => onDeletePhoto(photoUrl)}
-              accessibilityLabel="Delete Photo"
-            />
-          )}
-        </TouchableOpacity>
-      ))}
-    </View>
+    <FlatList
+      data={photos}
+      renderItem={renderItem}
+      keyExtractor={(item, index) => `${item}-${index}`}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.gallery}
+      accessibilityLabel="Photo Gallery"
+    />
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+  gallery: {
+    marginVertical: 16,
   },
   photo: {
-    width: PHOTO_SIZE,
-    height: PHOTO_SIZE,
-    borderRadius: 10,
-    margin: 5,
-  },
-  deleteIcon: {
-    position: "absolute",
-    top: 5,
-    right: 5,
-    backgroundColor: "rgba(255,255,255,0.7)",
-    borderRadius: 12,
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+    marginRight: 16,
   },
 });
 
-export default PhotoGallery;
+export default React.memo(PhotoGallery);

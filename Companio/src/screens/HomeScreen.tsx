@@ -1,41 +1,44 @@
-// src/screens/HomeScreen.tsx
 import React from "react";
-import { View, StyleSheet } from "react-native";
-import { Avatar, Text } from "react-native-paper";
-import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import { View } from "react-native";
+import { Text, Button } from "react-native-paper";
+import { useGetMeQuery, useLogoutMutation } from "../api/authApi";
+import { useDispatch, useSelector } from "react-redux";
+import { clearAuthState } from "../features/authSlice";
+import { clearTokens } from "../utils/keychain";
+import { RootState } from "../store/store";
 
-const HeaderSection = () => {
+export const HomeScreen = () => {
+  const { data, isLoading, error } = useGetMeQuery();
+  const [logoutFn] = useLogoutMutation();
+  const { refreshToken } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch();
+
+  const handleLogout = async () => {
+    if (refreshToken) {
+      await logoutFn({ refreshToken });
+    }
+    await clearTokens();
+    dispatch(clearAuthState());
+  };
+
+  if (isLoading) return <Text>Loading...</Text>;
+  if (error) return <Text>Error loading profile</Text>;
+
   return (
-    <View style={styles.headerContainer}>
-      <Icon name="alpha-h-circle" size={30} color="#6200ee" />
-      <View style={styles.greetingContainer}>
-        <Text variant="titleMedium">Welcome back,</Text>
-        <Text variant="headlineMedium" style={styles.username}>
-          Username!
-        </Text>
-      </View>
-      <Avatar.Image
-        size={40}
-        source={{ uri: "https://via.placeholder.com/150" }}
-      />
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 20,
+      }}
+    >
+      <Text variant="headlineLarge" style={{ marginBottom: 20 }}>
+        Welcome, {data?.data?.username}
+      </Text>
+      <Button mode="contained" onPress={handleLogout}>
+        Logout
+      </Button>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  headerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    justifyContent: "space-between",
-  },
-  greetingContainer: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  username: {
-    fontWeight: "bold",
-  },
-});
-
-export default HeaderSection;

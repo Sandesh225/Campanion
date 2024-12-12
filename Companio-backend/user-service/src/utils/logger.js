@@ -1,25 +1,31 @@
 // src/utils/logger.js
+import { createLogger, format, transports } from "winston";
 
-import winston from "winston";
-import config from "../config/index.js";
-
-const logger = winston.createLogger({
+const logger = createLogger({
   level: "info",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
+  format: format.combine(
+    format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+    format.errors({ stack: true }),
+    format.splat(),
+    format.json()
   ),
+  defaultMeta: { service: "companion-finding-app" },
   transports: [
-    new winston.transports.File({ filename: "logs/error.log", level: "error" }),
-    new winston.transports.File({ filename: "logs/combined.log" }),
+    //
+    // - Write all logs with level `error` and below to `error.log`
+    // - Write all logs with level `info` and below to `combined.log`
+    //
+    new transports.File({ filename: "logs/error.log", level: "error" }),
+    new transports.File({ filename: "logs/combined.log" }),
   ],
 });
 
-// If not in production, log to console as well
-if (config.nodeEnv !== "production") {
+// If we're not in production then **ALSO** log to the `console`
+// with the colorized simple format.
+if (process.env.NODE_ENV !== "production") {
   logger.add(
-    new winston.transports.Console({
-      format: winston.format.simple(),
+    new transports.Console({
+      format: format.combine(format.colorize(), format.simple()),
     })
   );
 }

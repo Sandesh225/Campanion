@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 
 const { Schema } = mongoose;
 
+// Embedded Schemas
 const preferencesSchema = new Schema(
   {
     travelStyles: {
@@ -47,6 +48,11 @@ const settingsSchema = new Schema(
         default: "public",
       },
       searchVisibility: { type: Boolean, default: true },
+    },
+    themePreference: {
+      type: String,
+      enum: ["light", "dark"],
+      default: "light",
     },
     notifications: {
       emailNotifications: { type: Boolean, default: true },
@@ -96,28 +102,15 @@ const badgeSchema = new Schema(
   { _id: false }
 );
 
-function arrayLimit(val) {
-  return val.length <= 8;
-}
-
-// Add a location field for the user's current position
-// Using GeoJSON format: { type: "Point", coordinates: [lng, lat] }
 const locationSchema = new Schema(
   {
-    type: {
-      type: String,
-      enum: ["Point"],
-      required: true,
-      default: "Point",
-    },
-    coordinates: {
-      type: [Number], // [longitude, latitude]
-      required: true,
-    },
+    type: { type: String, enum: ["Point"], required: true, default: "Point" },
+    coordinates: { type: [Number], required: true }, // [longitude, latitude]
   },
   { _id: false }
 );
 
+// User Schema
 const userSchema = new Schema(
   {
     username: {
@@ -148,7 +141,7 @@ const userSchema = new Schema(
           return /(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@$!%*?&])/.test(value);
         },
         message:
-          "Password must include one uppercase, one lowercase, one digit, and one special character.",
+          "Password must include an uppercase letter, a lowercase letter, a digit, and a special character.",
       },
     },
     role: { type: String, enum: ["user", "admin"], default: "user" },
@@ -173,8 +166,6 @@ const userSchema = new Schema(
     security: { type: securitySchema, default: () => ({}) },
     badges: { type: [badgeSchema], default: [] },
     tokens: { type: tokensSchema, default: () => ({}) },
-
-    // Current location of the user
     currentLocation: { type: locationSchema, index: "2dsphere" },
   },
   {
@@ -184,10 +175,12 @@ const userSchema = new Schema(
   }
 );
 
+// Indexes
 userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ username: 1 }, { unique: true });
 userSchema.index({ "tokens.refreshToken": 1 });
 
+// Pre-save Hook for Password Hashing
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   try {
@@ -199,6 +192,7 @@ userSchema.pre("save", async function (next) {
   }
 });
 
+// Instance Methods
 userSchema.methods.validatePassword = async function (password) {
   return bcrypt.compare(password, this.password);
 };
@@ -212,10 +206,15 @@ userSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.password;
   delete obj.tokens;
-  delete obj.security?.twoFactorSecret;
+  if (obj.security && obj.security.twoFactorSecret) {
+    delete obj.security.twoFactorSecret;
+  }
   return obj;
 };
 
-const User = mongoose.model("User", userSchema);
+function arrayLimit(val) {
+  return val.length <= 8;
+}
 
+const User = mongoose.model("User", userSchema);
 export { User };

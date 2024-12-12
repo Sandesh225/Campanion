@@ -1,5 +1,3 @@
-// src/components/InitializeApp.tsx
-
 import React, { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
@@ -17,8 +15,6 @@ const InitializeApp: React.FC = () => {
   const dispatch = useAppDispatch();
   const accessToken = useAppSelector(selectAccessToken);
   const refreshToken = useAppSelector(selectRefreshToken);
-
-  // Automatically attempt to refresh token on startup
   const [refreshTokenMutation, { isLoading }] = useRefreshTokenMutation();
 
   useEffect(() => {
@@ -31,11 +27,10 @@ const InitializeApp: React.FC = () => {
           service: "refreshToken",
         });
 
-        // If tokens are found in the Keychain, dispatch them to the store
         if (accessTokenCredentials && refreshTokenCredentials) {
           dispatch(
             setCredentials({
-              user: null, // User will be fetched by getMe
+              user: null,
               accessToken: accessTokenCredentials.password,
               refreshToken: refreshTokenCredentials.password,
             })
@@ -46,13 +41,10 @@ const InitializeApp: React.FC = () => {
         showErrorToast("Initialization Failed", "Please try again.");
       }
     };
-
-    // Initialize tokens from Keychain and refetch user data if tokens exist
     initialize();
   }, [dispatch]);
 
   useEffect(() => {
-    // If tokens are available, try refreshing the session
     if (accessToken && refreshToken) {
       refreshTokenMutation({ refreshToken })
         .unwrap()

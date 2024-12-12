@@ -1,5 +1,3 @@
-// src/hooks/useNetworkStatus.ts
-
 import { useEffect, useState } from "react";
 import NetInfo, { NetInfoState } from "@react-native-community/netinfo";
 
@@ -11,7 +9,6 @@ const useNetworkStatus = () => {
       setIsConnected(state.isConnected);
     });
 
-    // Fetch initial connection status
     NetInfo.fetch().then((state) => {
       setIsConnected(state.isConnected);
     });

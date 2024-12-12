@@ -1,10 +1,10 @@
-// src/components/Home/ActionButtons.tsx
-
+// src/components/home/ActionButtons.tsx
 import React, { useCallback } from "react";
 import { View, StyleSheet } from "react-native";
 import { Button } from "react-native-paper";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
 import { MainStackParamList } from "../../types/navigation";
+import { showInfoToast } from "../../utils/toast";
 
 type ActionButtonsNavigationProp = NavigationProp<MainStackParamList>;
 
@@ -12,20 +12,21 @@ const ActionButtons: React.FC = () => {
   const navigation = useNavigation<ActionButtonsNavigationProp>();
 
   const navigateTo = useCallback(
-    <T extends keyof MainStackParamList>(screen: T) =>
-      () => {
-        navigation.navigate(screen);
-      },
+    (screen: keyof MainStackParamList) => () => {
+      navigation.navigate(screen);
+      showInfoToast("Navigation", `Navigating to ${screen}`);
+    },
     [navigation]
   );
 
   return (
-    <View style={styles.actionButtonContainer}>
+    <View style={styles.container}>
       <Button
         mode="contained"
         icon="account-search"
         onPress={navigateTo("FindCompanions")}
-        style={styles.actionButton}
+        style={styles.button}
+        accessibilityLabel="Find Companions Button"
       >
         Find Companions
       </Button>
@@ -33,7 +34,8 @@ const ActionButtons: React.FC = () => {
         mode="contained"
         icon="map-plus"
         onPress={navigateTo("PlanTrips")}
-        style={styles.actionButton}
+        style={styles.button}
+        accessibilityLabel="Plan Trips Button"
       >
         Plan Trips
       </Button>
@@ -41,7 +43,8 @@ const ActionButtons: React.FC = () => {
         mode="contained"
         icon="compass-outline"
         onPress={navigateTo("NearbyActivities")}
-        style={styles.actionButton}
+        style={styles.button}
+        accessibilityLabel="Nearby Activities Button"
       >
         Nearby Activities
       </Button>
@@ -50,13 +53,13 @@ const ActionButtons: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  actionButtonContainer: {
+  container: {
     flexDirection: "row",
     justifyContent: "space-around",
     marginVertical: 16,
     marginHorizontal: 16,
   },
-  actionButton: {
+  button: {
     flex: 1,
     marginHorizontal: 8,
     borderRadius: 30,

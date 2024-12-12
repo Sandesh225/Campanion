@@ -212,7 +212,7 @@ export const getUserMatches = async (req, res, next) => {
  * Match users currently at the same destination or within a certain radius using $geoNear.
  * @route GET /api/matching/nearby/:userId?radius=500
  */
-export const findUsersNearby = async (req, res) => {
+export const findUsersNearby = async (req, res, next) => {
   try {
     const { userId } = req.params;
     const { radius = 500 } = req.query;
@@ -222,9 +222,13 @@ export const findUsersNearby = async (req, res) => {
     const user = await User.findById(userId);
     if (!user || !user.currentLocation) {
       logger.info(`User or location not found for userId=${userId}`);
-      return res
-        .status(404)
-        .json({ message: "User or user location not found." });
+      return res.status(404).json({
+        statusCode: 404,
+        data: null,
+        message: "User or user location not found.",
+        errors: [],
+        success: false,
+      });
     }
 
     // Use aggregation with $geoNear for more flexibility
@@ -242,10 +246,16 @@ export const findUsersNearby = async (req, res) => {
 
     logger.info(`Found ${results.length} nearby users for userId=${userId}`);
 
-    res.json({ nearbyUsers: results });
+    res.status(200).json({
+      statusCode: 200,
+      data: results,
+      message: "Nearby users retrieved successfully.",
+      errors: [],
+      success: true,
+    });
   } catch (error) {
     logger.error(`Error finding nearby users: ${error.message}`);
-    return res.status(500).json({ error: "Internal server error." });
+    next(error);
   }
 };
 
@@ -253,7 +263,7 @@ export const findUsersNearby = async (req, res) => {
  * Match users passing through the same waypoints but with different destinations.
  * @route GET /api/matching/waypoints/:userId
  */
-export const findUsersPassingThroughSameWaypoints = async (req, res) => {
+export const findUsersPassingThroughSameWaypoints = async (req, res, next) => {
   try {
     const { userId } = req.params;
     logger.info(
@@ -263,13 +273,19 @@ export const findUsersPassingThroughSameWaypoints = async (req, res) => {
     const userTrips = await Trip.find({ user: userId });
     if (!userTrips.length) {
       logger.info(`No trips found for userId=${userId}`);
-      return res.status(404).json({ message: "No trips found for this user." });
+      return res.status(404).json({
+        statusCode: 404,
+        data: null,
+        message: "No trips found for this user.",
+        errors: [],
+        success: false,
+      });
     }
 
     const userWaypoints = userTrips.flatMap((t) => t.routeWaypoints);
     if (!userWaypoints.length) {
       logger.info(`No waypoints found for userId=${userId}`);
-      return res.json({ matchedUsers: [] });
+      return res.status(200).json({ matchedUsers: [] });
     }
 
     const firstWaypoint = userWaypoints[0];
@@ -300,12 +316,12 @@ export const findUsersPassingThroughSameWaypoints = async (req, res) => {
     logger.info(
       `Found ${matchedUsers.length} users passing through same waypoints for userId=${userId}`
     );
-    return res.json({ matchedUsers });
+    return res.status(200).json({ matchedUsers });
   } catch (error) {
     logger.error(
       `Error finding users passing through same waypoints: ${error.message}`
     );
-    return res.status(500).json({ error: "Internal server error." });
+    next(error);
   }
 };
 
@@ -313,7 +329,7 @@ export const findUsersPassingThroughSameWaypoints = async (req, res) => {
  * Match users traveling to the same destination using the same travelMode.
  * @route GET /api/matching/same-dest-mode/:userId
  */
-export const findUsersSameDestinationAndMode = async (req, res) => {
+export const findUsersSameDestinationAndMode = async (req, res, next) => {
   try {
     const { userId } = req.params;
     logger.info(
@@ -323,7 +339,13 @@ export const findUsersSameDestinationAndMode = async (req, res) => {
     const userTrips = await Trip.find({ user: userId });
     if (!userTrips.length) {
       logger.info(`No trips found for userId=${userId}`);
-      return res.status(404).json({ message: "No trips found for this user." });
+      return res.status(404).json({
+        statusCode: 404,
+        data: null,
+        message: "No trips found for this user.",
+        errors: [],
+        success: false,
+      });
     }
 
     const firstTrip = userTrips[0];
@@ -352,15 +374,19 @@ export const findUsersSameDestinationAndMode = async (req, res) => {
     logger.info(
       `Found ${matchedUsers.length} users with same destination and mode for userId=${userId}`
     );
-    return res.json({ matchedUsers });
+    return res.status(200).json({ matchedUsers });
   } catch (error) {
     logger.error(
       `Error finding users with same destination and mode: ${error.message}`
     );
-    return res.status(500).json({ error: "Internal server error." });
+    next(error);
   }
 };
 
+/**
+ * Culinary Contrast Matches (e.g., vegan vs. local meat enthusiasts).
+ * @route GET /api/matching/culinary-contrast/:userId
+ */
 export const findCulinaryContrastMatches = async (req, res, next) => {
   try {
     const { userId } = req.params;
@@ -376,7 +402,7 @@ export const findCulinaryContrastMatches = async (req, res, next) => {
 
     if (!isVegan) {
       // If user is not vegan, criterion doesn't apply
-      return res.json({ matchedUsers: [] });
+      return res.status(200).json({ matchedUsers: [] });
     }
 
     const excluded = await getExcludedUserIds(userId);
@@ -394,7 +420,7 @@ export const findCulinaryContrastMatches = async (req, res, next) => {
     logger.info(
       `Found ${matchedUsers.length} culinary contrast users for userId=${userId}`
     );
-    return res.json({ matchedUsers });
+    return res.status(200).json({ matchedUsers });
   } catch (error) {
     logger.error(`Error finding culinary contrast matches: ${error.message}`);
     next(error);
@@ -402,9 +428,8 @@ export const findCulinaryContrastMatches = async (req, res, next) => {
 };
 
 /**
- * Complementary Interests:
- * Example: A wildlife enthusiast matched with a photographer.
- * Endpoint: GET /api/matching/complementary-interests/:userId
+ * Complementary Interests Matches (e.g., wildlife enthusiast & photographer).
+ * @route GET /api/matching/complementary-interests/:userId
  */
 export const findComplementaryInterestsMatches = async (req, res, next) => {
   try {
@@ -417,17 +442,19 @@ export const findComplementaryInterestsMatches = async (req, res, next) => {
     const userInterests = user.profile?.interests || [];
     const excluded = await getExcludedUserIds(userId);
 
-    // Example: If user has "wildlife", we look for users who have "photography".
-    let complementaryTarget = [];
-    if (userInterests.includes("wildlife")) {
-      complementaryTarget.push("photography");
-    }
-    if (userInterests.includes("photography")) {
-      complementaryTarget.push("wildlife");
-    }
+    // Define complementary interests mapping
+    const complementaryMap = {
+      wildlife: "photography",
+      photography: "wildlife",
+      // Add more complementary pairs as needed
+    };
+
+    const complementaryTarget = userInterests
+      .map((interest) => complementaryMap[interest])
+      .filter(Boolean);
 
     if (complementaryTarget.length === 0) {
-      return res.json({ matchedUsers: [] });
+      return res.status(200).json({ matchedUsers: [] });
     }
 
     const matchedUsers = await User.find({
@@ -442,7 +469,7 @@ export const findComplementaryInterestsMatches = async (req, res, next) => {
     logger.info(
       `Found ${matchedUsers.length} complementary interest users for userId=${userId}`
     );
-    return res.json({ matchedUsers });
+    return res.status(200).json({ matchedUsers });
   } catch (error) {
     logger.error(
       `Error finding complementary interests matches: ${error.message}`
@@ -452,21 +479,22 @@ export const findComplementaryInterestsMatches = async (req, res, next) => {
 };
 
 /**
- * Travel Style Compatibility:
- * Criteria: Same travel style (e.g. both are backpackers).
- * Endpoint: GET /api/matching/travel-style/:userId
+ * Travel Style Compatibility Matches.
+ * @route GET /api/matching/travel-style/:userId
  */
 export const findTravelStyleMatches = async (req, res, next) => {
   try {
     const { userId } = req.params;
     logger.info(`Finding travel style matches for userId=${userId}`);
 
-    const user = await User.findById(userId).select("profile").lean();
+    const user = await User.findById(userId)
+      .select("profile.travelStyles")
+      .lean();
     if (!user) throw new NotFoundError("User not found.");
 
     const userStyles = user.profile?.travelStyles || [];
     if (userStyles.length === 0) {
-      return res.json({ matchedUsers: [] });
+      return res.status(200).json({ matchedUsers: [] });
     }
 
     const excluded = await getExcludedUserIds(userId);
@@ -483,7 +511,7 @@ export const findTravelStyleMatches = async (req, res, next) => {
     logger.info(
       `Found ${matchedUsers.length} travel style matches for userId=${userId}`
     );
-    return res.json({ matchedUsers });
+    return res.status(200).json({ matchedUsers });
   } catch (error) {
     logger.error(`Error finding travel style matches: ${error.message}`);
     next(error);
@@ -491,9 +519,9 @@ export const findTravelStyleMatches = async (req, res, next) => {
 };
 
 /**
- * Exact Travel Routes Match:
+ * Exact Travel Routes Match.
  * Match users with the same origin and destination in their trips.
- * Endpoint: GET /api/matching/exact-routes/:userId
+ * @route GET /api/matching/exact-routes/:userId
  */
 export const findExactRouteMatches = async (req, res, next) => {
   try {
@@ -502,7 +530,7 @@ export const findExactRouteMatches = async (req, res, next) => {
 
     const userTrips = await Trip.find({ user: userId }).lean();
     if (!userTrips || userTrips.length === 0) {
-      return res.json({ matchedUsers: [] });
+      return res.status(200).json({ matchedUsers: [] });
     }
 
     const userOrigins = userTrips.map((t) => t.origin);
@@ -550,7 +578,7 @@ export const findExactRouteMatches = async (req, res, next) => {
     logger.info(
       `Found ${matchedUsers.length} exact route matches for userId=${userId}`
     );
-    return res.json({ matchedUsers });
+    return res.status(200).json({ matchedUsers });
   } catch (error) {
     logger.error(`Error finding exact route matches: ${error.message}`);
     next(error);
@@ -558,8 +586,8 @@ export const findExactRouteMatches = async (req, res, next) => {
 };
 
 /**
- * Same TravelMode:
- * Endpoint: GET /api/matching/travel-mode/:userId
+ * Same TravelMode Matches.
+ * @route GET /api/matching/travel-mode/:userId
  */
 export const findSameTravelModeMatches = async (req, res, next) => {
   try {
@@ -567,10 +595,11 @@ export const findSameTravelModeMatches = async (req, res, next) => {
     logger.info(`Finding same travel mode matches for userId=${userId}`);
 
     const userTrips = await Trip.find({ user: userId }).lean();
-    if (!userTrips.length) return res.json({ matchedUsers: [] });
+    if (!userTrips.length) return res.status(200).json({ matchedUsers: [] });
 
     const userModes = [...new Set(userTrips.map((t) => t.travelMode))];
-    if (userModes.length === 0) return res.json({ matchedUsers: [] });
+    if (userModes.length === 0)
+      return res.status(200).json({ matchedUsers: [] });
 
     const excluded = await getExcludedUserIds(userId);
 
@@ -613,7 +642,7 @@ export const findSameTravelModeMatches = async (req, res, next) => {
     logger.info(
       `Found ${matchedUsers.length} same travel mode matches for userId=${userId}`
     );
-    return res.json({ matchedUsers });
+    return res.status(200).json({ matchedUsers });
   } catch (error) {
     logger.error(`Error finding same travel mode matches: ${error.message}`);
     next(error);
@@ -621,9 +650,9 @@ export const findSameTravelModeMatches = async (req, res, next) => {
 };
 
 /**
- * Language Compatibility:
+ * Language Compatibility Matches.
  * If users share at least one language.
- * Endpoint: GET /api/matching/language/:userId
+ * @route GET /api/matching/language/:userId
  */
 export const findLanguageMatches = async (req, res, next) => {
   try {
@@ -634,7 +663,8 @@ export const findLanguageMatches = async (req, res, next) => {
     if (!user) throw new NotFoundError("User not found.");
 
     const userLangs = user.profile?.languages || [];
-    if (userLangs.length === 0) return res.json({ matchedUsers: [] });
+    if (userLangs.length === 0)
+      return res.status(200).json({ matchedUsers: [] });
 
     const excluded = await getExcludedUserIds(userId);
 
@@ -650,7 +680,7 @@ export const findLanguageMatches = async (req, res, next) => {
     logger.info(
       `Found ${matchedUsers.length} language matches for userId=${userId}`
     );
-    return res.json({ matchedUsers });
+    return res.status(200).json({ matchedUsers });
   } catch (error) {
     logger.error(`Error finding language matches: ${error.message}`);
     next(error);
@@ -658,9 +688,8 @@ export const findLanguageMatches = async (req, res, next) => {
 };
 
 /**
- * Uncommon Culinary Matches (Niche)
- * E.g., both users enjoy "insect cuisine" or "fermented foods".
- * Endpoint: GET /api/matching/culinary-niche/:userId
+ * Culinary Niche Matches (e.g., insect cuisine, fermented foods).
+ * @route GET /api/matching/culinary-niche/:userId
  */
 export const findCulinaryNicheMatches = async (req, res, next) => {
   try {
@@ -677,10 +706,12 @@ export const findCulinaryNicheMatches = async (req, res, next) => {
       "fermented foods",
       "exotic spices",
     ];
-    const userNiche = userCulinary.filter((c) => nicheInterests.includes(c));
+    const userNiche = userCulinary.filter((c) =>
+      nicheInterests.includes(c.toLowerCase())
+    );
 
     if (userNiche.length === 0) {
-      return res.json({ matchedUsers: [] });
+      return res.status(200).json({ matchedUsers: [] });
     }
 
     const excluded = await getExcludedUserIds(userId);
@@ -697,7 +728,7 @@ export const findCulinaryNicheMatches = async (req, res, next) => {
     logger.info(
       `Found ${matchedUsers.length} culinary niche matches for userId=${userId}`
     );
-    return res.json({ matchedUsers });
+    return res.status(200).json({ matchedUsers });
   } catch (error) {
     logger.error(`Error finding culinary niche matches: ${error.message}`);
     next(error);

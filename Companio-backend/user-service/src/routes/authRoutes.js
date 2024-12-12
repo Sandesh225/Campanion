@@ -1,10 +1,9 @@
 // src/routes/authRoutes.js
-
 import express from "express";
 import {
   register,
   login,
-  refreshToken,
+  refreshTokenHandler,
   logout,
   getMe,
 } from "../controllers/authController.js";
@@ -20,25 +19,23 @@ import authMiddleware from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-// Registration Route
+// Registration
 router.post("/register", validateRequest(registerSchema), register);
 
-// Login Route with rate limiting
+// Login with rate limiting
 router.post("/login", loginLimiter, validateRequest(loginSchema), login);
 
-// Refresh Token Route
+// Refresh Token
 router.post(
   "/refresh-token",
   validateRequest(refreshTokenSchema),
-  refreshToken
+  refreshTokenHandler
 );
 
-// Get current user
+// Get current user profile (Protected)
 router.get("/me", authMiddleware, getMe);
 
-// Logout Route
+// Logout
 router.post("/logout", validateRequest(logoutSchema), logout);
-
-// Password Reset Routes
 
 export default router;

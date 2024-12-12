@@ -19,37 +19,27 @@ import {
 
 const router = express.Router();
 
+// Apply authentication middleware
+router.use(authMiddleware);
+
 // Existing routes
-router.get("/:userId", authMiddleware, findUserMatchesByDestination);
-router.post("/like", authMiddleware, likeUser);
-router.get("/:userId/matches", authMiddleware, getUserMatches);
-router.get("/nearby/:userId", authMiddleware, findUsersNearby);
-router.get(
-  "/waypoints/:userId",
-  authMiddleware,
-  findUsersPassingThroughSameWaypoints
-);
-router.get(
-  "/same-dest-mode/:userId",
-  authMiddleware,
-  findUsersSameDestinationAndMode
-);
+router.get("/:userId", findUserMatchesByDestination);
+router.post("/like", likeUser);
+router.get("/:userId/matches", getUserMatches);
+router.get("/nearby/:userId", findUsersNearby);
+router.get("/waypoints/:userId", findUsersPassingThroughSameWaypoints);
+router.get("/same-dest-mode/:userId", findUsersSameDestinationAndMode);
 
 // New separate endpoints:
-router.get(
-  "/culinary-contrast/:userId",
-  authMiddleware,
-  findCulinaryContrastMatches
-);
+router.get("/culinary-contrast/:userId", findCulinaryContrastMatches);
 router.get(
   "/complementary-interests/:userId",
-  authMiddleware,
   findComplementaryInterestsMatches
 );
-router.get("/travel-style/:userId", authMiddleware, findTravelStyleMatches);
-router.get("/exact-routes/:userId", authMiddleware, findExactRouteMatches);
-router.get("/travel-mode/:userId", authMiddleware, findSameTravelModeMatches);
-router.get("/language/:userId", authMiddleware, findLanguageMatches);
-router.get("/culinary-niche/:userId", authMiddleware, findCulinaryNicheMatches);
+router.get("/travel-style/:userId", findTravelStyleMatches);
+router.get("/exact-routes/:userId", findExactRouteMatches);
+router.get("/travel-mode/:userId", findSameTravelModeMatches);
+router.get("/language/:userId", findLanguageMatches);
+router.get("/culinary-niche/:userId", findCulinaryNicheMatches);
 
 export default router;

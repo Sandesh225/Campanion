@@ -1,5 +1,7 @@
-import React, { Component, ErrorInfo, ReactNode } from "react";
-import { View, Text, StyleSheet, Button } from "react-native";
+// src/components/common/ErrorBoundary.tsx
+import React, { Component, ReactNode } from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { Button } from "react-native-paper";
 import { showErrorToast } from "../../utils/toast";
 
 interface Props {
@@ -17,24 +19,29 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(_: Error): State {
+    // Update state so the next render shows the fallback UI.
     return { hasError: true };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  componentDidCatch(error: Error, errorInfo: any) {
+    // You can log the error to an error reporting service
     console.error("Uncaught error:", error, errorInfo);
-    showErrorToast("An unexpected error occurred.", error.message);
+    showErrorToast("Unexpected Error", "Something went wrong.");
   }
 
-  handleRetry = (): void => {
+  handleRetry = () => {
     this.setState({ hasError: false });
   };
 
   render() {
     if (this.state.hasError) {
+      // Fallback UI
       return (
         <View style={styles.container}>
-          <Text style={styles.title}>Something went wrong.</Text>
-          <Button title="Try Again" onPress={this.handleRetry} />
+          <Text style={styles.text}>Something went wrong.</Text>
+          <Button mode="contained" onPress={this.handleRetry}>
+            Retry
+          </Button>
         </View>
       );
     }
@@ -49,12 +56,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 16,
-    backgroundColor: "#fff",
   },
-  title: {
+  text: {
+    marginBottom: 16,
     fontSize: 18,
-    marginBottom: 20,
-    color: "#ff0000",
+    color: "#333",
   },
 });
 

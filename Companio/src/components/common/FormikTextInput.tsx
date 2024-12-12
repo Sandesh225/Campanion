@@ -1,41 +1,55 @@
 // src/components/common/FormikTextInput.tsx
-
 import React from "react";
-import { TextInput as PaperTextInput } from "react-native-paper";
-import { useFormikContext, useField } from "formik";
 import { StyleSheet } from "react-native";
+import { TextInput } from "react-native-paper";
+import { useField } from "formik";
 
 interface FormikTextInputProps {
   name: string;
   label: string;
-  placeholder?: string;
   secureTextEntry?: boolean;
+  multiline?: boolean;
+  numberOfLines?: number;
   keyboardType?: string;
+  leftIcon?: string;
+  accessibilityLabel?: string;
 }
 
 const FormikTextInput: React.FC<FormikTextInputProps> = ({
   name,
-  ...props
+  label,
+  secureTextEntry = false,
+  multiline = false,
+  numberOfLines = 1,
+  keyboardType = "default",
+  leftIcon,
+  accessibilityLabel,
 }) => {
-  const { setFieldValue } = useFormikContext<any>();
-  const [field, meta] = useField(name);
+  const [field, meta, helpers] = useField(name);
 
   return (
-    <PaperTextInput
-      {...props}
+    <TextInput
+      label={label}
       value={field.value}
-      onChangeText={(value) => setFieldValue(name, value)}
-      error={meta.touched && meta.error ? true : false}
-      style={styles.input}
+      onChangeText={helpers.setValue}
+      onBlur={() => helpers.setTouched(true)}
+      secureTextEntry={secureTextEntry}
+      multiline={multiline}
+      numberOfLines={numberOfLines}
+      keyboardType={keyboardType}
       mode="outlined"
+      error={meta.touched && Boolean(meta.error)}
+      left={leftIcon ? <TextInput.Icon name={leftIcon} /> : undefined}
+      style={styles.input}
+      accessibilityLabel={accessibilityLabel}
     />
   );
 };
 
 const styles = StyleSheet.create({
   input: {
-    marginBottom: 10,
+    marginBottom: 16,
   },
 });
 
-export default FormikTextInput;
+export default React.memo(FormikTextInput);

@@ -7,7 +7,6 @@ export const updateProfileSchema = Joi.object({
     location: Joi.string().required(),
     bio: Joi.string().max(500),
     currency: Joi.string().valid("USD", "EUR", "GBP"),
-
     travelStyles: Joi.array()
       .items(
         Joi.string().valid(

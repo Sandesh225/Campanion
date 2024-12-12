@@ -54,7 +54,10 @@ export const loginSchema = Joi.object({
 });
 
 export const refreshTokenSchema = Joi.object({
-  refreshToken: Joi.string().required(),
+  refreshToken: Joi.string().required().messages({
+    "any.required": '"refreshToken" is required',
+    "string.base": '"refreshToken" should be a string',
+  }),
 });
 
 export const logoutSchema = Joi.object({

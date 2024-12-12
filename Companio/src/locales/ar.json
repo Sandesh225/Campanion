@@ -1,0 +1,15 @@
+{
+  "welcome": "أهلاً وسهلاً",
+  "login": "تسجيل الدخول",
+  "register": "تسجيل",
+  "forgot_password": "هل نسيت كلمة المرور؟",
+  "logout": "تسجيل الخروج",
+  "search_placeholder": "ابحث عن رفقاء أو أنشطة...",
+  "profile": "الملف الشخصي",
+  "edit_profile": "تعديل الملف الشخصي",
+  "create_trip": "إنشاء رحلة",
+  "plan_trip": "خطط لرحلة",
+  "discover_new_trips": "اكتشف رحلات جديدة",
+  "find_companions": "ابحث عن رفقاء",
+  "nearby_activities": "أنشطة قريبة"
+}

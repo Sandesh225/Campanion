@@ -1,39 +1,43 @@
 // src/App.tsx
-
 import React from "react";
 import { Provider as ReduxProvider } from "react-redux";
-import { store } from "./store";
 import { Provider as PaperProvider } from "react-native-paper";
-import ErrorBoundary from "./components/common/ErrorBoundary";
+import { store } from "./store/store";
+import AppNavigator from "./navigation/AppNavigator";
 import Toast from "react-native-toast-message";
-import { StyleSheet } from "react-native";
 import toastConfig from "./utils/toastConfig";
-import AppNavigator from "./navigation";
-import NetworkStatusHandler from "./components/NetworkStatusHandler";
-import InitializeApp from "./components/InitializeApp";
-import theme from "./theme/index";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import ErrorBoundary from "./components/common/ErrorBoundary";
+import Loading from "./components/Loading";
+import { useAuthCheck } from "./hooks/useAuthCheck";
+import { I18nextProvider } from "react-i18next";
+import i18n from "./i18n";
+
+const ThemedApp: React.FC = () => {
+  const { authInitialized } = useAuthCheck();
+
+  if (!authInitialized) {
+    return <Loading />;
+  }
+
+  return <AppNavigator />;
+};
 
 const App: React.FC = () => {
   return (
     <ReduxProvider store={store}>
-      <ErrorBoundary>
-        <PaperProvider theme={theme}>
-          <NetworkStatusHandler />
-          <InitializeApp />
-          <AppNavigator />
-          <Toast config={toastConfig} />
-        </PaperProvider>
-      </ErrorBoundary>
+      <SafeAreaProvider>
+        <I18nextProvider i18n={i18n}>
+          <PaperProvider>
+            <ErrorBoundary>
+              <ThemedApp />
+            </ErrorBoundary>
+            <Toast config={toastConfig} />
+          </PaperProvider>
+        </I18nextProvider>
+      </SafeAreaProvider>
     </ReduxProvider>
   );
 };
-
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});
 
 export default App;

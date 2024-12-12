@@ -1,10 +1,8 @@
 // src/components/Swipe/SwipeCard.tsx
 
 import React from "react";
-import { View, StyleSheet, Image, Text, Dimensions } from "react-native";
+import { View, StyleSheet, Image, Text } from "react-native";
 import { UserProfile } from "../../types/api";
-
-const { width } = Dimensions.get("window");
 
 interface SwipeCardProps {
   profile: UserProfile;
@@ -28,8 +26,8 @@ const SwipeCard: React.FC<SwipeCardProps> = ({ profile }) => {
 
 const styles = StyleSheet.create({
   card: {
-    width: width * 0.9,
-    height: width * 1.2,
+    width: "90%",
+    height: "80%",
     backgroundColor: "#fff",
     borderRadius: 10,
     elevation: 5,

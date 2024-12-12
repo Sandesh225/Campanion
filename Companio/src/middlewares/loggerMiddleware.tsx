@@ -1,3 +1,5 @@
+// src/middlewares/loggerMiddleware.ts
+
 import { Middleware } from "@reduxjs/toolkit";
 
 const loggerMiddleware: Middleware = (storeAPI) => (next) => (action) => {

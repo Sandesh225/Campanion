@@ -1,7 +1,8 @@
 // src/components/Chat/ChatBubble.tsx
 
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
+import { Text } from "react-native-paper";
 import { ChatMessage } from "../../types/api";
 
 interface ChatBubbleProps {
@@ -24,10 +25,10 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, isMe }) => {
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 5,
     maxWidth: "70%",
     borderRadius: 10,
     padding: 10,
+    marginVertical: 5,
   },
   myMessage: {
     backgroundColor: "#DCF8C6",

@@ -25,8 +25,13 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend }) => {
         style={styles.input}
         value={text}
         onChangeText={setText}
+        accessibilityLabel="Chat Input"
       />
-      <TouchableOpacity onPress={handleSend} style={styles.button}>
+      <TouchableOpacity
+        onPress={handleSend}
+        style={styles.button}
+        accessibilityLabel="Send Message Button"
+      >
         <MaterialIcon name="send" size={24} color="#6200ee" />
       </TouchableOpacity>
     </View>
@@ -40,6 +45,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderTopWidth: 1,
     borderColor: "#ddd",
+    alignItems: "center",
   },
   input: {
     flex: 1,

@@ -102,3 +102,11 @@ export interface UploadPhotoPayload {
   userId: string;
   file: any;
 }
+
+export interface Activity {
+  id: string;
+  name: string;
+  description: string;
+  location: string;
+  // Add other relevant fields
+}

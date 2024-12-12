@@ -16,9 +16,7 @@ const authMiddleware = async (req, res, next) => {
   try {
     // Verify token and attach user to the request
     const decoded = jwt.verify(token, config.jwtSecret);
-    const user = await User.findById(decoded.userId).select(
-      "-password -tokens"
-    );
+    const user = await User.findById(decoded.id).select("-password -tokens");
     if (!user) {
       throw new UnauthorizedError("User not found.");
     }

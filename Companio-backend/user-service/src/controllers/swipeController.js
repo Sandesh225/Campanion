@@ -1,10 +1,9 @@
 // src/controllers/swipeController.js
-
+import { io, userSocketMap } from "../../server.js";
+import { BadRequestError, NotFoundError } from "../utils/ApiError.js";
 import { Swipe } from "../models/Swipe.js";
 import { Match } from "../models/Match.js";
 import { User } from "../models/User.js";
-import { BadRequestError } from "../utils/ApiError.js";
-import { io, userSocketMap } from "../../server.js";
 
 /**
  * Handle user swipe actions and check for mutual matches.
@@ -58,23 +57,21 @@ const handleSwipe = async (req, res, next) => {
 
           // Fetch user details for notifications
           const [user1, user2] = await Promise.all([
-            User.findById(userId).select("username profile.profilePictureUrl"),
-            User.findById(targetId).select(
-              "username profile.profilePictureUrl"
-            ),
+            User.findById(userId).select("username profilePicture"),
+            User.findById(targetId).select("username profilePicture"),
           ]);
 
           // Notification payloads
           const notificationToUser1 = {
             matchedProfileId: user2._id,
             matchedProfileName: user2.username,
-            matchedProfilePhotoUrl: user2.profile.profilePictureUrl,
+            matchedProfilePhotoUrl: user2.profilePicture,
           };
 
           const notificationToUser2 = {
             matchedProfileId: user1._id,
             matchedProfileName: user1.username,
-            matchedProfilePhotoUrl: user1.profile.profilePictureUrl,
+            matchedProfilePhotoUrl: user1.profilePicture,
           };
 
           // Send real-time notifications via Socket.IO

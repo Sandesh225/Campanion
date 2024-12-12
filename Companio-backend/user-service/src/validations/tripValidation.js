@@ -81,6 +81,7 @@ export const addParticipantsSchema = Joi.object({
       "any.required": `"participants" is required`,
     }),
 });
+
 export const milestoneSchema = Joi.object({
   type: Joi.string()
     .valid("flight", "accommodation", "activity", "other")
@@ -89,12 +90,14 @@ export const milestoneSchema = Joi.object({
   date: Joi.date().required(),
   landmark: Joi.string().optional(),
 });
+
 export const updateParticipantSchema = Joi.object({
   name: Joi.string().optional(),
   email: Joi.string().email().optional(),
   status: Joi.string().valid("invited", "joined", "declined").optional(),
   role: Joi.string().valid("organizer", "member").optional(),
 });
+
 export const waypointSchema = Joi.object({
   type: Joi.string().valid("Point").required(),
   coordinates: Joi.array()

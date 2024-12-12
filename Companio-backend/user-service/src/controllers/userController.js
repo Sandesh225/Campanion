@@ -506,8 +506,7 @@ const deleteTravelPhoto = async (req, res, next) => {
     user.travelPhotos.splice(photoIndex, 1);
     await user.save();
 
-    // Delete from Cloudinary (if desired)
-    // Extract filename from URL and destroy
+    // Delete from Cloudinary
     const publicId = photoUrl.split("/").pop().split(".")[0];
     await cloudinary.uploader.destroy(`travel_photos/${publicId}`);
 

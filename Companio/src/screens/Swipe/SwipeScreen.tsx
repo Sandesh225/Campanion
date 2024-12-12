@@ -1,90 +1,115 @@
 // src/screens/Swipe/SwipeScreen.tsx
 
-import React, { useState, useEffect } from "react";
+import React, { useRef } from "react";
 import { View, StyleSheet, Dimensions } from "react-native";
-import DeckSwiper from "react-native-deck-swiper";
+import Swiper from "react-native-deck-swiper";
 import SwipeCard from "./SwipeCard";
-import api from "../../services/api";
-import { UserProfile, ApiResponse } from "../../types/api";
-import { showToast } from "../../utils/toast";
+import { useSearchUsersQuery, useLikeUserMutation } from "../../api/authApi";
+import useAppSelector from "../../hooks/useAppSelector";
+import { selectAuthUser } from "../../features/authSlice";
+import { showSuccessToast, showErrorToast } from "../../utils/toast";
+import Loading from "../../components/Loading";
 import { Text } from "react-native-paper";
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
 const SwipeScreen: React.FC = () => {
-  const [profiles, setProfiles] = useState<UserProfile[]>([]);
-  const [index, setIndex] = useState<number>(0);
+  const user = useAppSelector(selectAuthUser);
+  const { data, error, isLoading } = useSearchUsersQuery({
+    excludeUserId: user?.id,
+  });
+  const [likeUser] = useLikeUserMutation();
+  const swiperRef = useRef<any>(null);
 
-  useEffect(() => {
-    const fetchProfiles = async () => {
+  if (isLoading) return <Loading />;
+
+  if (error || !data) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text>Error fetching profiles.</Text>
+      </View>
+    );
+  }
+
+  const profiles = data.data;
+
+  const handleSwipe = async (
+    cardIndex: number,
+    direction: "left" | "right" | "top" | "bottom"
+  ) => {
+    const likedProfile = profiles[cardIndex];
+    if (direction === "right") {
       try {
-        const response = await api.get<ApiResponse<UserProfile[]>>(
-          "/users/profiles"
-        );
-        if (response.data.success) {
-          setProfiles(response.data.data);
-        } else {
-          showToast(
-            "error",
-            "Error",
-            response.data.message || "Failed to load profiles."
-          );
-        }
-      } catch (error: any) {
-        console.error("Error fetching profiles:", error);
-        showToast("error", "Error", "Failed to load profiles.");
-      }
-    };
-
-    fetchProfiles();
-  }, []);
-
-  const handleSwipedLeft = (cardIndex: number) => {
-    console.log("Swiped Left on index:", cardIndex);
-    // Handle swipe left (dislike)
-  };
-
-  const handleSwipedRight = async (cardIndex: number) => {
-    console.log("Swiped Right on index:", cardIndex);
-    const swipedProfile = profiles[cardIndex];
-    try {
-      const response = await api.post<ApiResponse<any>>("/users/match", {
-        matchedUserId: swipedProfile.id,
-      });
-      if (response.data.success) {
-        showToast("success", "Matched!", "You have a new match!");
-        // Handle match
-      } else {
-        showToast(
-          "error",
-          "Error",
-          response.data.message || "Failed to process match."
+        await likeUser({
+          userId: user?.id || "",
+          likedUserId: likedProfile.id,
+        }).unwrap();
+        showSuccessToast("Liked", `You liked ${likedProfile.username}`);
+      } catch (err: any) {
+        showErrorToast(
+          "Like Failed",
+          err?.data?.message || "Failed to like user."
         );
       }
-    } catch (error: any) {
-      console.error("Error processing match:", error);
-      showToast("error", "Error", "Failed to process match.");
     }
+    // Handle other swipe directions if needed
   };
 
   return (
     <View style={styles.container}>
-      {profiles.length > 0 ? (
-        <DeckSwiper
-          cards={profiles}
-          renderCard={(profile) => <SwipeCard profile={profile} />}
-          onSwipedLeft={handleSwipedLeft}
-          onSwipedRight={handleSwipedRight}
-          cardIndex={index}
-          backgroundColor={"#f0f0f0"}
-          stackSize={3}
-          verticalSwipe={false}
-        />
-      ) : (
-        <View style={styles.noProfiles}>
-          <Text>No profiles available at the moment.</Text>
-        </View>
-      )}
+      <Swiper
+        ref={swiperRef}
+        cards={profiles}
+        renderCard={(card) => <SwipeCard profile={card} />}
+        onSwiped={(cardIndex) => {}}
+        onSwipedLeft={(cardIndex) => handleSwipe(cardIndex, "left")}
+        onSwipedRight={(cardIndex) => handleSwipe(cardIndex, "right")}
+        cardIndex={0}
+        backgroundColor="#f0f0f0"
+        stackSize={3}
+        infinite
+        animateCardOpacity
+        verticalSwipe={false}
+        horizontalThreshold={width * 0.25}
+        stackSeparation={15}
+        overlayLabels={{
+          left: {
+            title: "NOPE",
+            style: {
+              label: {
+                backgroundColor: "red",
+                color: "white",
+                fontSize: 24,
+              },
+              wrapper: {
+                flexDirection: "column",
+                alignItems: "flex-end",
+                justifyContent: "flex-start",
+                marginTop: 20,
+                marginLeft: -width * 0.25,
+              },
+            },
+          },
+          right: {
+            title: "LIKE",
+            style: {
+              label: {
+                backgroundColor: "green",
+                color: "white",
+                fontSize: 24,
+              },
+              wrapper: {
+                flexDirection: "column",
+                alignItems: "flex-start",
+                justifyContent: "flex-start",
+                marginTop: 20,
+                marginLeft: width * 0.25,
+              },
+            },
+          },
+        }}
+        disableBottomSwipe
+      />
     </View>
   );
 };
@@ -92,13 +117,12 @@ const SwipeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: "#f0f0f0",
   },
-  noProfiles: {
+  errorContainer: {
     flex: 1,
-    alignItems: "center",
     justifyContent: "center",
+    alignItems: "center",
   },
 });
 

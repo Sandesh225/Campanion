@@ -1,64 +1,93 @@
-// src/screens/Auth/RegisterScreen.tsx
-import React from "react";
-import {
-  View,
-  StyleSheet,
-  ImageBackground,
-  Dimensions,
-  TouchableOpacity,
-  Text,
-} from "react-native";
-import Swiper from "react-native-swiper";
+// src/screens/RegisterScreen.tsx
 
+import React, { useState } from "react";
+import { View, StyleSheet } from "react-native";
+import { TextInput, Button, Text } from "react-native-paper";
+import { useRegisterMutation } from "../api/authApi";
+import { storeTokens } from "../utils/keychain";
+import { useAppDispatch } from "../hooks/useAppDispatch";
+import { setTokens, setUser } from "../features/authSlice"; // Import setUser
+import { showErrorToast, showSuccessToast } from "../utils/toast";
 import { useNavigation } from "@react-navigation/native";
-import { StackNavigationProp } from "@react-navigation/stack";
-import { AuthStackParamList } from "src/types/navigation";
-import RegisterCard from "./../components/RegisterCard";
+import { MainStackParamList } from "../types/navigation";
+import type { StackNavigationProp } from "@react-navigation/stack";
 
-const { width, height } = Dimensions.get("window");
+type RegisterScreenNavigationProp = StackNavigationProp<
+  MainStackParamList,
+  "Register"
+>;
 
-type NavigationProp = StackNavigationProp<AuthStackParamList, "Register">;
+export const RegisterScreen = () => {
+  const [registerFn, { isLoading }] = useRegisterMutation();
+  const dispatch = useAppDispatch();
+  const navigation = useNavigation<RegisterScreenNavigationProp>(); // Use useNavigation hook
 
-const landmarks = [
-  require("../../assets/landmarks/eiffel_tower.jpg"),
-  require("../../assets/landmarks/great_wall.jpg"),
-  require("../../assets/landmarks/taj_mahal.jpg"),
-  require("../../assets/landmarks/statue_of_liberty.jpg"),
-];
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-const RegisterScreen: React.FC = () => {
-  const navigation = useNavigation<NavigationProp>();
+  const handleRegister = async () => {
+    try {
+      const res: any = await registerFn({ username, email, password }).unwrap();
+      if (res.data) {
+        const { accessToken, refreshToken, user } = res.data;
+        await storeTokens(accessToken, refreshToken);
+        dispatch(setTokens({ accessToken, refreshToken }));
+        dispatch(setUser(user));
+        showSuccessToast(
+          "Registration Successful",
+          `Welcome, ${user.username}!`
+        );
+      } else {
+        showErrorToast("Registration Failed", "Unable to register.");
+      }
+    } catch (error: any) {
+      showErrorToast(
+        "Registration Error",
+        error?.data?.message || "Please try again."
+      );
+    }
+  };
 
   return (
     <View style={styles.container}>
-      <Swiper
-        autoplay
-        autoplayTimeout={5}
-        showsPagination={false}
-        loop
-        style={styles.swiper}
-        accessibilityLabel="Landmark Swiper"
+      <Text variant="headlineLarge" style={styles.title}>
+        Register
+      </Text>
+      <TextInput
+        label="Username"
+        value={username}
+        onChangeText={setUsername}
+        mode="outlined"
+        style={styles.input}
+      />
+      <TextInput
+        label="Email"
+        value={email}
+        onChangeText={setEmail}
+        mode="outlined"
+        style={styles.input}
+        autoCapitalize="none"
+        keyboardType="email-address"
+      />
+      <TextInput
+        label="Password"
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+        mode="outlined"
+        style={styles.input}
+      />
+      <Button mode="contained" onPress={handleRegister} loading={isLoading}>
+        Register
+      </Button>
+      <Button
+        mode="text"
+        onPress={() => navigation.navigate("Login")} // Use navigation
+        style={styles.loginButton}
       >
-        {landmarks.map((image, index) => (
-          <ImageBackground key={index} source={image} style={styles.image} />
-        ))}
-      </Swiper>
-      <RegisterCard />
-      <TouchableOpacity
-        style={styles.switch}
-        accessible
-        accessibilityLabel="Navigate to Login"
-      >
-        <Text style={styles.switchText}>
-          Already have an account?{" "}
-          <Text
-            style={styles.switchLink}
-            onPress={() => navigation.navigate("Login")}
-          >
-            Login
-          </Text>
-        </Text>
-      </TouchableOpacity>
+        Already have an account? Login
+      </Button>
     </View>
   );
 };
@@ -66,30 +95,11 @@ const RegisterScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  swiper: {
-    flex: 1,
-  },
-  image: {
-    width,
-    height,
-    resizeMode: "cover",
     justifyContent: "center",
-    alignItems: "center",
+    padding: 20,
+    backgroundColor: "#fff",
   },
-  switch: {
-    position: "absolute",
-    bottom: 30,
-    alignSelf: "center",
-  },
-  switchText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-  },
-  switchLink: {
-    color: "#FBBC05",
-    textDecorationLine: "underline",
-  },
+  title: { marginBottom: 20, textAlign: "center" },
+  input: { marginBottom: 10 },
+  loginButton: { marginTop: 10 },
 });
-
-export default RegisterScreen;

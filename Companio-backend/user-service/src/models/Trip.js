@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
+// Embedded Schemas
 const milestoneSchema = new Schema({
   type: {
     type: String,
@@ -38,7 +39,6 @@ const participantSchema = new Schema(
   { timestamps: true }
 );
 
-// Location schema for waypoints
 const waypointSchema = new Schema(
   {
     type: {
@@ -55,6 +55,7 @@ const waypointSchema = new Schema(
   { _id: false }
 );
 
+// Trip Schema
 const tripSchema = new Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
@@ -85,14 +86,10 @@ const tripSchema = new Schema(
     is_active: { type: Boolean, default: true },
     milestones: [milestoneSchema],
     participants: [participantSchema],
-
-    // Store route waypoints
     routeWaypoints: {
       type: [waypointSchema],
       default: [],
     },
-
-    // Destination coordinates for geospatial queries
     destinationLocation: {
       type: {
         type: String,
@@ -109,6 +106,7 @@ const tripSchema = new Schema(
   { timestamps: true }
 );
 
+// Indexes
 tripSchema.index({ user: 1, startDate: -1 });
 tripSchema.index({ destination: 1 });
 tripSchema.index({ routeWaypoints: "2dsphere" });
